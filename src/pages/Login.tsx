@@ -1,4 +1,5 @@
 import { type ReactElement, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { InputNormal } from '../components/input/InputNormal';
 import { DefaultBtn } from '../components/button/DefaultBtn';
 import { useFullSheet } from '../hooks/useFullSheet';
@@ -6,14 +7,19 @@ import { useCacheStorage } from '../hooks/useCacheStorage';
 import { SignupEmailFullSheet } from '../components/FullSheet/SignupEmailFullSheet';
 import { SIGNUP_DATA_KEY, type SignupData } from '../types/signup';
 import { IconNextVineLogo } from '../assets/Icon';
+import { signin } from '../api/login';
+import { setCookie } from '../utils/common';
+import { useToast } from '../contexts/ToastContext';
 
 export function Login(): ReactElement {
+  const navigate = useNavigate();
   const { pushFullSheet } = useFullSheet();
   const cache = useCacheStorage();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [emailState, setEmailState] = useState<'keyout-empty' | 'keyin-empty' | 'keyin-typing' | 'keyout-error'>('keyout-empty');
-  const [passwordState, setPasswordState] = useState<'keyout-empty' | 'keyin-empty' | 'keyin-typing' | 'keyout-error'>('keyout-empty');
+  const { showToast } = useToast();
+  const [email, setEmail] = useState('test@test.test');
+  const [password, setPassword] = useState('test!@34');
+  const [emailState, setEmailState] = useState<'keyout-empty' | 'keyin-empty' | 'keyin-typing' | 'keyout-error'>('keyin-typing');
+  const [passwordState, setPasswordState] = useState<'keyout-empty' | 'keyin-empty' | 'keyin-typing' | 'keyout-error'>('keyin-typing');
   const [emailError, setEmailError] = useState<string | undefined>(undefined);
   const [passwordError, setPasswordError] = useState<string | undefined>(undefined);
 
@@ -55,7 +61,7 @@ export function Login(): ReactElement {
     }
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     // 입력 값 검증
     let hasError = false;
     
@@ -77,10 +83,20 @@ export function Login(): ReactElement {
     
     if (hasError) {
       return;
-    }
+    };
     
-    // TODO: 로그인 로직 구현
-    console.log('로그인:', { email, password });
+    const response = await signin(email, password);
+    if (response.status === 200 && response.data) {
+      // 로그인 성공 시 토큰 저장
+      setCookie('userAccessToken', response.data.accessToken);
+      localStorage.setItem('userRefreshToken', response.data.refreshToken);
+      // 로그인 성공 시 홈 페이지로 이동
+      navigate('/home', { replace: true });
+    } else {
+      // 로그인 실패 시 토스트 알림만 표시
+      const errorMessage = response.message || '로그인에 실패했습니다.';
+      showToast(errorMessage);
+    };
   };
 
   return (

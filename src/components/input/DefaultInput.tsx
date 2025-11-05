@@ -1,4 +1,4 @@
-import { type ChangeEvent, type ReactElement, useCallback, forwardRef } from 'react';
+import { type ChangeEvent, useCallback, forwardRef } from 'react';
 import type { InputProps } from '../../types/input';
 
 /**

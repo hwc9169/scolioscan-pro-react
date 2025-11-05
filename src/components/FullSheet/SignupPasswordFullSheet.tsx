@@ -118,7 +118,7 @@ export function SignupPasswordFullSheet(): ReactElement {
       <div className="box-border flex gap-[10px] h-[68px] items-center p-[20px] relative shrink-0 w-full">
         <button
           type="button"
-          onClick={() => popFullSheet({ exitAnimationDirection: 'right' })} // 중앙에서 우측으로 퇴장
+          onClick={() => popFullSheet({ exitAnimationDirection: 'none' })}
           className="relative shrink-0 w-[24px] h-[24px] flex items-center justify-center"
           aria-label="뒤로 가기"
         >

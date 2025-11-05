@@ -4,7 +4,33 @@ import { useFullSheetContext } from '../../contexts/FullSheetContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { FullSheetStack, AnimationDirection } from '../../types/fullSheet';
 
-export function FullSheetProvider(): ReactElement {
+// 애니메이션 방향에 따른 initial/animate 값 계산 (순수 함수로 외부에 정의)
+const getAnimationValues = (direction: AnimationDirection = 'right', type: 'enter' | 'exit') => {
+  switch (direction) {
+    case 'left':
+      return type === 'enter' 
+        ? { initial: { x: '-100vw' }, animate: { x: 0 } }
+        : { initial: { x: 0 }, animate: { x: '-100vw' } };
+    case 'right':
+      return type === 'enter'
+        ? { initial: { x: '100vw' }, animate: { x: 0 } }
+        : { initial: { x: 0 }, animate: { x: '100vw' } };
+    case 'bottom':
+      return type === 'enter'
+        ? { initial: { y: '100vh' }, animate: { y: 0 } }
+        : { initial: { y: 0 }, animate: { y: '100vh' } };
+    case 'top':
+      return type === 'enter'
+        ? { initial: { y: '-100vh' }, animate: { y: 0 } }
+        : { initial: { y: 0 }, animate: { y: '-100vh' } };
+    case 'none':
+    default:
+      return { initial: {}, animate: {} };
+  }
+};
+
+export function FullSheetRenderer(): ReactElement {
+  "use memo"; // React Compiler 최적화 활성화
   const { stack, activeIndex, pendingPopOptions, closeFullSheet, resolveFullSheet } = useFullSheetContext();
 
   // 스냅샷 유지로 최종 닫힘 시 exit 애니메이션 재생
@@ -46,15 +72,34 @@ export function FullSheetProvider(): ReactElement {
       
       // push 감지: stack 길이가 증가했을 때 (새 풀시트 등장)
       const isNewPush = prevLen < currLen;
+      // pop 감지: stack 길이가 감소했을 때 (풀시트 사라짐)
+      const isPop = prevLen > currLen;
       
       setRenderedActiveIndex(activeIndex);
-      setVisible(true);
       
-      // 새로운 push 시 enter 애니메이션
-      if (isNewPush) {
-        setPhase('enter');
+      if (isPop) {
+        // pop 감지: exit 애니메이션을 위해 이전 마지막 풀시트 정보 저장
+        // renderedStack은 아직 업데이트하지 않음 (exit 애니메이션 재생을 위해)
+        const lastFullSheet = renderedStack[prevLen - 1];
+        if (lastFullSheet) {
+          exitingFullSheetRef.current = lastFullSheet;
+          // popFullSheet 호출 시 전달된 exitAnimationDirection 우선 사용
+          // 없으면 풀시트 자체의 exitAnimationDirection 또는 animationDirection 또는 'none'
+          popExitDirectionRef.current = pendingPopOptions?.exitAnimationDirection
+            || lastFullSheet.options?.exitAnimationDirection 
+            || lastFullSheet.options?.animationDirection 
+            || 'none';
+        };
+        setVisible(true); // exit 애니메이션을 위해 visible 유지
+        setPhase('exit');
       } else {
-        setPhase('idle');
+        setVisible(true);
+        // 새로운 push 시 enter 애니메이션
+        if (isNewPush) {
+          setPhase('enter');
+        } else {
+          setPhase('idle');
+        }
       }
     } else if (prevLen > 0) {
       // CLEAR_STACK 또는 CLOSE_FULLSHEET 처리: 모든 풀시트 제거
@@ -86,33 +131,9 @@ export function FullSheetProvider(): ReactElement {
     }
 
     prevLenRef.current = currLen;
+    // React Compiler가 자동으로 의존성을 추론하므로 명시적 의존성 배열은 선택사항
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stack, activeIndex, pendingPopOptions]);
-
-  // 애니메이션 방향에 따른 initial/animate 값 계산
-  const getAnimationValues = (direction: AnimationDirection = 'right', type: 'enter' | 'exit') => {
-    switch (direction) {
-      case 'left':
-        return type === 'enter' 
-          ? { initial: { x: '-100vw' }, animate: { x: 0 } }
-          : { initial: { x: 0 }, animate: { x: '-100vw' } };
-      case 'right':
-        return type === 'enter'
-          ? { initial: { x: '100vw' }, animate: { x: 0 } }
-          : { initial: { x: 0 }, animate: { x: '100vw' } };
-      case 'bottom':
-        return type === 'enter'
-          ? { initial: { y: '100vh' }, animate: { y: 0 } }
-          : { initial: { y: 0 }, animate: { y: '100vh' } };
-      case 'top':
-        return type === 'enter'
-          ? { initial: { y: '-100vh' }, animate: { y: 0 } }
-          : { initial: { y: 0 }, animate: { y: '-100vh' } };
-      case 'none':
-      default:
-        return { initial: {}, animate: {} };
-    }
-  };
 
   // 배경 클릭 핸들러 (스냅샷 기준)
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
@@ -173,6 +194,7 @@ export function FullSheetProvider(): ReactElement {
                 <motion.div
                   key={fullSheet.id}
                   className="absolute inset-0"
+                  style={{ zIndex: index }}
                   onClick={(e) => {
                     handleBackdropClick(e);
                     e.stopPropagation();
@@ -207,7 +229,8 @@ export function FullSheetProvider(): ReactElement {
               return (
                 <motion.div
                   key={fullSheet.id}
-                  className={`absolute inset-0 ${isActive ? 'block' : 'hidden'}`}
+                  className="absolute inset-0"
+                  style={{ zIndex: index }}
                   onClick={(e) => {
                     handleBackdropClick(e);
                     e.stopPropagation();
@@ -236,10 +259,12 @@ export function FullSheetProvider(): ReactElement {
             }
             
             // 모든 풀시트를 동일한 구조로 렌더링하여 상태 보존
+            // hidden 클래스 제거: 기존 풀시트도 DOM에 유지되도록 함
             return (
               <div
                 key={fullSheet.id}
-                className={`absolute inset-0 ${isActive ? 'block' : 'hidden'}`}
+                className="absolute inset-0"
+                style={{ zIndex: index }}
                 onClick={(e) => {
                   handleBackdropClick(e);
                   e.stopPropagation();

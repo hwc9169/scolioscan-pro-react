@@ -1,4 +1,4 @@
-import { type ReactElement, useState, useRef, useEffect, useMemo } from 'react';
+import { type ReactElement, useState, useRef, useEffect } from 'react';
 import type { InputState } from '../../types/input';
 
 interface BirthSelectProps {

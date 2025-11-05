@@ -1,4 +1,4 @@
-import { type ReactElement, useMemo, forwardRef } from 'react';
+import { useMemo, forwardRef } from 'react';
 import { DefaultInput } from './DefaultInput';
 import type { BaseInputProps } from '../../types/input';
 

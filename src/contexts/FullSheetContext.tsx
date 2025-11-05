@@ -171,6 +171,8 @@ interface FullSheetProviderProps {
 }
 
 export const FullSheetProvider = ({ children }: FullSheetProviderProps): ReactElement => {
+  "use memo"; // React Compiler 최적화 활성화
+  
   const [state, dispatch] = useReducer(fullSheetReducer, { stack: [], activeIndex: -1, pendingPopOptions: undefined });
 
   const openFullSheet = (component: ComponentType<Record<string, unknown>>, props?: Record<string, unknown>, options?: FullSheetOptions) => {

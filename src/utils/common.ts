@@ -1,3 +1,117 @@
+import { refreshAccessToken } from './loginSession';
+
+
+/**
+ * 쿠키 조회
+ * @param name - 조회할 쿠키 이름
+ * @returns 쿠키 값 또는 null
+ */
+export function getCookie(name: string): string | null {
+  const cookieString = document.cookie;
+  const cookies = cookieString.split('; ');
+
+  for (const cookie of cookies) {
+    const [key, value] = cookie.split('=');
+    if (key === name) return value;
+  }
+
+  return null;
+}
+
+/**
+ * 쿠키 설정
+ * @param name - 쿠키 이름
+ * @param value - 쿠키 값
+ * @param days - 만료일 (기본값: 365일)
+ */
+export function setCookie(name: string, value: string, days: number = 365): void {
+  const date = new Date();
+  date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+  const expires = 'expires=' + date.toUTCString();
+  document.cookie = name + '=' + value + '; ' + expires + '; path=/';
+}
+
+/**
+ * URL에서 마지막 경로 값을 가져오는 함수
+ * @returns 마지막 경로 값 (.html 확장자 제거)
+ */
+export function getLastPathFromURL(): string {
+  const path = window.location.pathname;
+  let lastPath = path.substring(path.lastIndexOf('/') + 1);
+  if (lastPath.endsWith('.html')) {
+    lastPath = lastPath.substring(0, lastPath.lastIndexOf('.'));
+  }
+  return lastPath;
+}
+
+// 비동기 fetch api
+export async function fetchDataAsync(url: string, method: string, data: any, form: boolean = false) {
+  const accessToken = getCookie('userAccessToken');
+  let newUrl = url;
+
+  const headers: any = {
+    Authorization: `Bearer ${accessToken}`,
+  };
+
+  if (!form) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  const fetchOptions: any = { method, headers };
+
+  if (method !== 'GET' && form) {
+    const formData = new FormData();
+    formData.append('json_data', JSON.stringify(data.json_data));
+    data.form_data.forEach(({ key, value }: { key: string; value: string }) => {
+      formData.append(key, value);
+    });
+    fetchOptions.body = formData;
+  }
+
+  if (method !== 'GET' && !form) {
+    fetchOptions.body = JSON.stringify(data);
+  }
+
+  if (method === 'GET' || method === 'DELETE') {
+    newUrl += '?';
+    for (const key in data) {
+      const value = data[key];
+      newUrl += `${key}=${value}&`;
+    }
+  }
+
+  fetchOptions.credentials = 'include';
+
+  try {
+    const response = await fetch(newUrl, fetchOptions);
+
+    if (response.ok) {
+      const contentType = response.headers.get('Content-Type') || '';
+      if (contentType.includes('application/json')) {
+        return await response.json();
+      } else if (contentType.includes('image/') || contentType.includes('audio/') || contentType.includes('application/octet-stream')) {
+        return await response.blob();
+      } else if (contentType.includes('text/')) {
+        return await response.text();
+      } else {
+        throw new Error('지원하지 않는 데이터 형식입니다.');
+      }
+    } else if (response.status === 401) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        return await fetchDataAsync(url, method, data, form); // 새 Access Token으로 재요청
+      } else {
+        return null;
+      }
+    } else {
+      return response;
+    }
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
 /**
  * 이메일 형식 검증 함수
  * @param email - 검증할 이메일 주소
