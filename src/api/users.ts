@@ -24,10 +24,12 @@ export interface CurrentUserResponse {
  * PUT /api/users/me
  */
 export interface UpdateUserProfileRequest {
-  name: string;
-  phone: string;
-  address: string;
-  detail_address: string;
+  name?: string;
+  phone?: string;
+  address?: string;
+  detail_address?: string;
+  birthday?: string; // ISO 8601 형식
+  sex?: boolean; // true = 여성, false = 남성
 }
 
 /**

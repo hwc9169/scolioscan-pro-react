@@ -37,7 +37,7 @@ const img4 = MessageQuestion;
  */
 export function My(): ReactElement {
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user, loading } = useAuth();
   const [bannerImage, setBannerImage] = useState(BannerImage1);
 
   const handleLogout = () => {
@@ -81,10 +81,14 @@ export function My(): ReactElement {
             </div>
             <div className="content-stretch flex flex-col items-start justify-center leading-[0] not-italic relative shrink-0 text-nowrap">
               <div className="flex flex-col font-['Pretendard_Variable:SemiBold',sans-serif] justify-center relative shrink-0 text-[18px] text-black">
-                <p className="leading-[24px] text-nowrap whitespace-pre">홍길동</p>
+                <p className="leading-[24px] text-nowrap whitespace-pre">
+                  {loading ? '로딩 중...' : user?.name || '사용자'}
+                </p>
               </div>
               <div className="flex flex-col font-['Pretendard_Variable:Regular',sans-serif] justify-center relative shrink-0 text-[#7e89a0] text-[14px]">
-                <p className="leading-[20px] text-nowrap whitespace-pre">ceo@nextvine.com</p>
+                <p className="leading-[20px] text-nowrap whitespace-pre">
+                  {loading ? '로딩 중...' : user?.user_id || ''}
+                </p>
               </div>
             </div>
           </div>

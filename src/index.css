@@ -19,4 +19,21 @@
   * {
     box-sizing: border-box;
   }
+
+  /* 구독하기 버튼 색상 강제 적용 - 최고 우선순위 */
+  button.subscribe-button.bg-\[#2c9696\] {
+    background-color: #2c9696 !important;
+  }
+  
+  /* 정상 상태일 때는 무조건 opacity 1 - 최고 우선순위 */
+  button.subscribe-button.bg-\[#2c9696\]:not(:disabled),
+  button.subscribe-button:not(:disabled) {
+    opacity: 1 !important;
+  }
+  
+  /* disabled 상태일 때만 opacity 0.5 */
+  button.subscribe-button:disabled,
+  button.subscribe-button.bg-\[#2c9696\]:disabled {
+    opacity: 0.5 !important;
+  }
 }

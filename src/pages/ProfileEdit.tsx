@@ -1,32 +1,74 @@
-import { type ReactElement, useState } from 'react';
+import { type ReactElement, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { InputNormal } from '../components/input/InputNormal';
 import IconArrowLeft from '../assets/icon_svg/ProfileEdit/IconArrowLeft.svg';
 import type { InputState } from '../types/input';
+import { useAuth } from '../contexts/AuthContext';
+import { userAPI } from '../utils/api';
+import { useToast } from '../contexts/ToastContext';
 
 /**
  * 프로필 수정 페이지
  */
 export function ProfileEdit(): ReactElement {
   const navigate = useNavigate();
+  const { user, loading, updateUser } = useAuth();
+  const { showToast } = useToast();
   
   // 폼 상태
-  const [name, setName] = useState('홍길동');
-  const [nameState, setNameState] = useState<InputState>('keyout-typed');
+  const [name, setName] = useState('');
+  const [nameState, setNameState] = useState<InputState>('keyout-empty');
   
-  const [birthYear, setBirthYear] = useState('1995');
-  const [birthYearState, setBirthYearState] = useState<InputState>('keyout-typed');
+  const [birthYear, setBirthYear] = useState('');
+  const [birthYearState, setBirthYearState] = useState<InputState>('keyout-empty');
   
-  const [birthMonth, setBirthMonth] = useState('07');
-  const [birthMonthState, setBirthMonthState] = useState<InputState>('keyout-typed');
+  const [birthMonth, setBirthMonth] = useState('');
+  const [birthMonthState, setBirthMonthState] = useState<InputState>('keyout-empty');
   
-  const [birthDay, setBirthDay] = useState('08');
-  const [birthDayState, setBirthDayState] = useState<InputState>('keyout-typed');
+  const [birthDay, setBirthDay] = useState('');
+  const [birthDayState, setBirthDayState] = useState<InputState>('keyout-empty');
   
   const [gender, setGender] = useState<'male' | 'female'>('male');
   
   const [email, setEmail] = useState('');
   const [emailState, setEmailState] = useState<InputState>('keyout-empty');
+
+  // 사용자 정보가 로드되면 폼에 채우기
+  useEffect(() => {
+    if (user && !loading) {
+      // 이름
+      if (user.name) {
+        setName(user.name);
+        setNameState('keyout-typed');
+      }
+
+      // 생년월일 (ISO 8601 형식에서 파싱)
+      if (user.birthday) {
+        const birthDate = new Date(user.birthday);
+        if (!isNaN(birthDate.getTime())) {
+          const year = birthDate.getFullYear().toString();
+          const month = String(birthDate.getMonth() + 1).padStart(2, '0');
+          const day = String(birthDate.getDate()).padStart(2, '0');
+          
+          setBirthYear(year);
+          setBirthYearState('keyout-typed');
+          setBirthMonth(month);
+          setBirthMonthState('keyout-typed');
+          setBirthDay(day);
+          setBirthDayState('keyout-typed');
+        }
+      }
+
+      // 성별 (boolean: true = 여성, false = 남성)
+      setGender(user.sex ? 'female' : 'male');
+
+      // 이메일 (user_id 사용)
+      if (user.user_id) {
+        setEmail(user.user_id);
+        setEmailState('keyout-typed');
+      }
+    }
+  }, [user, loading]);
 
   // 이름 핸들러
   const handleNameFocus = () => {
@@ -87,6 +129,21 @@ export function ProfileEdit(): ReactElement {
     setBirthDayState(value ? 'keyin-typing' : 'keyin-empty');
   };
 
+  const handleBirthYearClear = () => {
+    setBirthYear('');
+    setBirthYearState('keyin-empty');
+  };
+
+  const handleBirthMonthClear = () => {
+    setBirthMonth('');
+    setBirthMonthState('keyin-empty');
+  };
+
+  const handleBirthDayClear = () => {
+    setBirthDay('');
+    setBirthDayState('keyin-empty');
+  };
+
   // 이메일 핸들러
   const handleEmailFocus = () => {
     setEmailState(email ? 'keyin-typing' : 'keyin-empty');
@@ -107,10 +164,84 @@ export function ProfileEdit(): ReactElement {
   };
 
   // 저장 핸들러
-  const handleSave = () => {
-    // TODO: API 호출로 프로필 저장
-    console.log('프로필 저장:', { name, birthYear, birthMonth, birthDay, gender, email });
-    navigate('/my');
+  const handleSave = async () => {
+    try {
+      // 생년월일을 ISO 8601 형식으로 변환
+      // 년/월/일 중 하나라도 입력되어 있으면 변환 시도
+      let birthdayISO = '';
+      if (birthYear || birthMonth || birthDay) {
+        // 기존 값에서 가져오거나 새 값 사용
+        const year = birthYear ? parseInt(birthYear, 10) : (user?.birthday ? new Date(user.birthday).getFullYear() : new Date().getFullYear());
+        const month = birthMonth ? parseInt(birthMonth, 10) - 1 : (user?.birthday ? new Date(user.birthday).getMonth() : 0); // JavaScript Date는 0부터 시작
+        const day = birthDay ? parseInt(birthDay, 10) : (user?.birthday ? new Date(user.birthday).getDate() : 1);
+        
+        // UTC 기준으로 날짜 생성 (시간대 변환 문제 방지)
+        const birthDate = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+        if (!isNaN(birthDate.getTime())) {
+          birthdayISO = birthDate.toISOString();
+        }
+      }
+
+      // 성별을 boolean으로 변환 (true = 여성, false = 남성)
+      const sex = gender === 'female';
+
+      // 프로필 업데이트 데이터 준비
+      // API 스펙에 맞게 필요한 필드만 전송 (이메일은 수정 불가)
+      const updateData: {
+        name?: string;
+        phone?: string;
+        address?: string;
+        detail_address?: string;
+        birthday?: string;
+        sex?: boolean;
+      } = {};
+
+      // 이름
+      if (name) {
+        updateData.name = name;
+      }
+
+      // 생년월일 (변환된 값이 있으면 전송, 없으면 기존 값 유지)
+      if (birthdayISO) {
+        updateData.birthday = birthdayISO;
+      } else if (user?.birthday) {
+        // 생년월일을 입력하지 않았으면 기존 값 유지
+        updateData.birthday = user.birthday;
+      }
+
+      // 성별 (항상 전송)
+      updateData.sex = sex;
+
+      // 기존 사용자 정보가 있으면 phone, address, detail_address 유지
+      if (user) {
+        updateData.phone = user.phone;
+        updateData.address = user.address;
+        updateData.detail_address = user.detail_address;
+      }
+
+      // 디버깅: 전송할 데이터 확인
+      console.log('프로필 업데이트 데이터:', updateData);
+
+      // API 호출
+      const response = await userAPI.updateProfile(updateData);
+      
+      // 디버깅: 응답 확인
+      console.log('프로필 업데이트 응답:', response.status, response.data);
+      
+      if (response.status === 200 || response.status === 204) {
+        // 성공 시 사용자 정보 업데이트
+        const updatedUser = response.data;
+        updateUser(updatedUser);
+        showToast('프로필이 저장되었습니다.');
+        navigate('/my');
+      } else {
+        const errorData = response.data;
+        showToast(errorData?.detail || '프로필 저장에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('프로필 저장 실패:', error);
+      showToast('프로필 저장 중 오류가 발생했습니다.');
+    }
   };
 
   return (
@@ -172,6 +303,7 @@ export function ProfileEdit(): ReactElement {
                   onChange={handleBirthYearChange}
                   onFocus={handleBirthYearFocus}
                   onBlur={handleBirthYearBlur}
+                  onClear={handleBirthYearClear}
                 />
               </div>
               <div className="content-stretch flex flex-col gap-[8px] h-[72px] items-start relative shrink-0 w-[100px]">
@@ -185,6 +317,7 @@ export function ProfileEdit(): ReactElement {
                   onChange={handleBirthMonthChange}
                   onFocus={handleBirthMonthFocus}
                   onBlur={handleBirthMonthBlur}
+                  onClear={handleBirthMonthClear}
                 />
               </div>
               <div className="content-stretch flex flex-col gap-[8px] h-[72px] items-start relative shrink-0 w-[100px]">
@@ -198,6 +331,7 @@ export function ProfileEdit(): ReactElement {
                   onChange={handleBirthDayChange}
                   onFocus={handleBirthDayFocus}
                   onBlur={handleBirthDayBlur}
+                  onClear={handleBirthDayClear}
                 />
               </div>
             </div>
@@ -250,7 +384,7 @@ export function ProfileEdit(): ReactElement {
             </div>
           </div>
 
-          {/* 이메일 */}
+          {/* 이메일 (읽기 전용) */}
           <div className="content-stretch flex flex-col gap-[8px] items-start relative shrink-0 w-full">
             <p className="[white-space-collapse:collapse] font-['Pretendard_Variable:Medium',sans-serif] leading-[20px] not-italic overflow-ellipsis overflow-hidden relative shrink-0 text-[#2b2f36] text-[15px] text-nowrap w-full">
               이메일
@@ -261,6 +395,7 @@ export function ProfileEdit(): ReactElement {
                 placeholder="abc@next.com"
                 state={emailState}
                 type="email"
+                disabled={true}
                 className="w-full"
                 onChange={handleEmailChange}
                 onFocus={handleEmailFocus}
