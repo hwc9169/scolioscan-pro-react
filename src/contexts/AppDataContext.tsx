@@ -86,14 +86,23 @@ export function AppDataProvider({ children }: AppDataProviderProps): ReactElemen
    */
   const refreshAlarms = useCallback(async () => {
     try {
-      const response = await getAlarms();
-      if (response instanceof Response && response.ok) {
-        const alarmsData = await response.json();
-        // API 응답이 배열인지 확인
-        const alarms = Array.isArray(alarmsData) ? alarmsData : [];
+      const result = await getAlarms();
+      // getAlarms는 배열 또는 Response를 반환
+      if (result instanceof Response) {
+        // 에러 응답인 경우
+        if (result.ok) {
+          const alarmsData = await result.json();
+          const alarms = Array.isArray(alarmsData) ? alarmsData : [];
+          setAppData((prev) => ({
+            ...prev,
+            alarms,
+          }));
+        }
+      } else {
+        // 배열인 경우 (성공)
         setAppData((prev) => ({
           ...prev,
-          alarms,
+          alarms: result || [],
         }));
       }
     } catch (error) {

@@ -2,9 +2,7 @@ import { type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
 import { useToastContext } from '../../contexts/ToastContext';
 import { AnimatePresence, motion } from 'framer-motion';
-
-// Figma에서 제공한 아이콘
-const imgIcon24SolidExclamationCircle = "http://localhost:3845/assets/19af6a48a1af76be5ff7ea16e6b62115ccb2191e.svg";
+import Icon24SolidExclamationCircle from '../../assets/icon_svg/Toast/Icon24SolidExclamationCircle.svg';
 
 /**
  * Toast 렌더링 컴포넌트
@@ -29,7 +27,7 @@ export function ToastRenderer(): ReactElement {
           >
             {/* 아이콘 */}
             <div className="relative shrink-0 size-[24px]">
-              <img alt="" className="block max-w-none size-full" src={imgIcon24SolidExclamationCircle} />
+              <img alt="" className="block max-w-none size-full" src={Icon24SolidExclamationCircle} />
             </div>
             {/* 텍스트 */}
             <p className="font-['Pretendard_Variable',sans-serif] font-normal leading-[18px] relative shrink-0 text-[13px] text-nowrap text-white whitespace-pre">
