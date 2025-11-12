@@ -6,12 +6,13 @@ import { DefaultBtn } from '../button/DefaultBtn';
 import { contentSlideUpVariants, contentSlideUpTransition } from './contentAnimation';
 import { SIGNUP_DATA_KEY, type SignupData } from '../../types/signup';
 import { IconArrowLeft } from '../../assets/Icon';
+import { register } from '../../api/auth';
 
 /**
  * 회원가입 성별 선택 풀 시트 컴포넌트
  */
 export function SignupGenderFullSheet(): ReactElement {
-  const { popFullSheet } = useFullSheet();
+  const { popFullSheet, closeFullSheet } = useFullSheet();
   const cache = useCacheStorage();
   const [gender, setGender] = useState<string>('');
   const [shouldAnimateContent, setShouldAnimateContent] = useState(false);
@@ -47,9 +48,8 @@ export function SignupGenderFullSheet(): ReactElement {
     setGender(selectedGender);
   };
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (!gender) return;
-    
     // 회원가입 데이터에서 성별 업데이트
     const signupData = cache.get<SignupData>(SIGNUP_DATA_KEY) || {};
     cache.set(SIGNUP_DATA_KEY, {
@@ -71,7 +71,60 @@ export function SignupGenderFullSheet(): ReactElement {
     console.log('=====================================');
     
     // TODO: 다음 단계로 진행하는 로직 구현 (예: 회원가입 완료 또는 다음 화면)
-    popFullSheet();
+
+    // {
+    //   "user_id": "user@example.com",
+    //   "user_pw": "stringst",
+    //   "name": "string",
+    //   "phone": "string",
+    //   "birthday": "2025-11-12T09:24:12.928Z",
+    //   "sex": true,
+    //   "address": "string",
+    //   "detail_address": "string"
+    // }
+
+    // 생년월일을 Date 객체로 변환 후 ISO 8601 datetime 형식으로 변환 (예: "1990-01-01T00:00:00.000Z")
+    const formatBirthday = (year?: string, month?: string, day?: string): string => {
+      if (!year || !month || !day) return '';
+      // Date 객체 생성 (월은 0부터 시작하므로 -1)
+      const date = new Date(
+        parseInt(year, 10),
+        parseInt(month, 10) - 1,
+        parseInt(day, 10),
+        0, 0, 0, 0
+      );
+      // ISO 8601 datetime 형식으로 변환
+      return date.toISOString();
+    };
+
+    try {
+      const response = await register({
+        "user_id": finalData?.email || '',
+        "user_pw": finalData?.password || '',
+        "name": finalData?.name || '',
+        "phone": '010-1234-5678',
+        "birthday": formatBirthday(finalData?.birthYear, finalData?.birthMonth, finalData?.birthDay),
+        "sex": finalData?.gender === 'male' ? true : false,
+        "address": '서울시 강남구 테헤란로 123',
+        "detail_address": '101동 101호',
+      });
+      
+      // 회원가입 성공 시 (201 Created) 모든 풀시트 닫기
+      if (response.status === 200) {
+        console.log('회원가입 성공');
+        // message: "User created successfully",
+        // user_id: "f0077669-2360-4eca-869b-183ee04c81b9"
+
+
+        closeFullSheet();
+      } else {
+        console.error('회원가입 실패:', response.status);
+      }
+    } catch(error) {
+      console.error('회원가입 요청 실패:', error);
+    }
+
+
   };
 
   return (

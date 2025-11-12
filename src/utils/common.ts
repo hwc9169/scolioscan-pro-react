@@ -45,7 +45,7 @@ export function getLastPathFromURL(): string {
 }
 
 // 비동기 fetch api
-export async function fetchDataAsync(url: string, method: string, data: any, form: boolean = false) {
+export async function fetchDataAsync(url: string, method: string, data: any, form: boolean = false, useCredentials: boolean = true) {
   const accessToken = getCookie('userAccessToken');
   let newUrl = url;
 
@@ -80,7 +80,10 @@ export async function fetchDataAsync(url: string, method: string, data: any, for
     }
   }
 
-  fetchOptions.credentials = 'include';
+  // credentials 옵션 추가 (기본값: true)
+  if (useCredentials) {
+    fetchOptions.credentials = 'include';
+  }
 
   try {
     const response = await fetch(newUrl, fetchOptions);
@@ -99,7 +102,7 @@ export async function fetchDataAsync(url: string, method: string, data: any, for
     } else if (response.status === 401) {
       const refreshed = await refreshAccessToken();
       if (refreshed) {
-        return await fetchDataAsync(url, method, data, form); // 새 Access Token으로 재요청
+        return await fetchDataAsync(url, method, data, form, useCredentials); // 새 Access Token으로 재요청
       } else {
         return null;
       }

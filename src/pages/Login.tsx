@@ -1,21 +1,17 @@
 import { type ReactElement, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { InputNormal } from '../components/input/InputNormal';
 import { DefaultBtn } from '../components/button/DefaultBtn';
 import { useFullSheet } from '../hooks/useFullSheet';
 import { useCacheStorage } from '../hooks/useCacheStorage';
 import { SignupEmailFullSheet } from '../components/FullSheet/SignupEmailFullSheet';
+import { PasswordResetFullSheet } from '../components/FullSheet/PasswordResetFullSheet';
 import { SIGNUP_DATA_KEY, type SignupData } from '../types/signup';
 import { IconNextVineLogo } from '../assets/Icon';
-import { signin } from '../api/login';
-import { setCookie } from '../utils/common';
-import { useToast } from '../contexts/ToastContext';
+import { login } from '../api/auth';
 
 export function Login(): ReactElement {
-  const navigate = useNavigate();
   const { pushFullSheet } = useFullSheet();
   const cache = useCacheStorage();
-  const { showToast } = useToast();
   const [email, setEmail] = useState('test@test.test');
   const [password, setPassword] = useState('test!@34');
   const [emailState, setEmailState] = useState<'keyout-empty' | 'keyin-empty' | 'keyin-typing' | 'keyout-error'>('keyin-typing');
@@ -85,18 +81,29 @@ export function Login(): ReactElement {
       return;
     };
     
-    const response = await signin(email, password);
-    if (response.status === 200 && response.data) {
-      // 로그인 성공 시 토큰 저장
-      setCookie('userAccessToken', response.data.accessToken);
-      localStorage.setItem('userRefreshToken', response.data.refreshToken);
-      // 로그인 성공 시 홈 페이지로 이동
-      navigate('/home', { replace: true });
-    } else {
-      // 로그인 실패 시 토스트 알림만 표시
-      const errorMessage = response.message || '로그인에 실패했습니다.';
-      showToast(errorMessage);
-    };
+    try{
+      const response = await login({
+        "user_id": email,
+        "user_pw": password,
+      });
+      console.log(response);
+    }catch(error){
+      console.error(error);
+    }
+
+
+
+    // if (response.status === 200 && response.data) {
+    //   // 로그인 성공 시 토큰 저장
+    //   setCookie('userAccessToken', response.data.accessToken);
+    //   localStorage.setItem('userRefreshToken', response.data.refreshToken);
+    //   // 로그인 성공 시 홈 페이지로 이동
+    //   navigate('/home', { replace: true });
+    // } else {
+    //   // 로그인 실패 시 토스트 알림만 표시
+    //   const errorMessage = response.message || '로그인에 실패했습니다.';
+    //   showToast(errorMessage);
+    // };
   };
 
   return (
@@ -170,8 +177,10 @@ export function Login(): ReactElement {
             <DefaultBtn
               variant="text"
               onClick={() => {
-                // TODO: 비밀번호 찾기 페이지로 이동
-                console.log('비밀번호 찾기');
+                // 비밀번호 찾기 풀시트 열기
+                pushFullSheet(PasswordResetFullSheet, undefined, {
+                  animationDirection: 'right',
+                });
               }}
               className="gap-[2px]"
             >
