@@ -49,9 +49,12 @@ export async function fetchDataAsync(url: string, method: string, data: any, for
   const accessToken = getCookie('userAccessToken');
   let newUrl = url;
 
-  const headers: any = {
-    Authorization: `Bearer ${accessToken}`,
-  };
+  const headers: any = {};
+  
+  // accessToken이 있을 때만 Authorization 헤더 추가
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
 
   if (!form) {
     headers['Content-Type'] = 'application/json';

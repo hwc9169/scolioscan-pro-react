@@ -1,4 +1,5 @@
 import { type ReactElement, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { InputNormal } from '../components/input/InputNormal';
 import { DefaultBtn } from '../components/button/DefaultBtn';
 import { useFullSheet } from '../hooks/useFullSheet';
@@ -8,11 +9,13 @@ import { PasswordResetFullSheet } from '../components/FullSheet/PasswordResetFul
 import { SIGNUP_DATA_KEY, type SignupData } from '../types/signup';
 import { IconNextVineLogo } from '../assets/Icon';
 import { login } from '../api/auth';
+import { setCookie } from '../utils/common';
 
 export function Login(): ReactElement {
+  const navigate = useNavigate();
   const { pushFullSheet } = useFullSheet();
   const cache = useCacheStorage();
-  const [email, setEmail] = useState('test@test.test');
+  const [email, setEmail] = useState('test02@gmail.com');
   const [password, setPassword] = useState('test!@34');
   const [emailState, setEmailState] = useState<'keyout-empty' | 'keyin-empty' | 'keyin-typing' | 'keyout-error'>('keyin-typing');
   const [passwordState, setPasswordState] = useState<'keyout-empty' | 'keyin-empty' | 'keyin-typing' | 'keyout-error'>('keyin-typing');
@@ -86,9 +89,20 @@ export function Login(): ReactElement {
         "user_id": email,
         "user_pw": password,
       });
-      console.log(response);
+      
+      // access_token을 쿠키에 저장
+      setCookie('userAccessToken', response.access_token);
+      
+      console.log('로그인 성공:', {
+        email: response.email,
+        name: response.name,
+        user_id: response.user_id,
+      });
+      
+      // 로그인 성공 후 Splash 페이지로 이동 (Splash에서 토큰 확인 후 Home으로 이동)
+      navigate('/', { replace: true });
     }catch(error){
-      console.error(error);
+      console.error('로그인 실패:', error);
     }
 
 

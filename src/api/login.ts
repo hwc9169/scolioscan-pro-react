@@ -59,7 +59,7 @@ export const signup = async (signupData: SignupData) => {
  */
 export async function getLoginUserInfoFetch(): Promise<Response> {
   const accessToken = getCookie('userAccessToken');
-  const response = await fetch(`${SERVER_URL}/api/user/info`, {
+  const response = await fetch(`${SERVER_URL}/api/users/me`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',

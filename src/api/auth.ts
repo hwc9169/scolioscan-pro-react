@@ -77,19 +77,31 @@ export async function register(registerData: RegisterRequest): Promise<Response>
 }
 
 /**
+ * 로그인 응답 데이터 타입
+ */
+export interface LoginResponse {
+  access_token: string;
+  email: string;
+  name: string;
+  token_type: string;
+  user_id: string;
+}
+
+/**
  * 로그인 API
  * POST /api/auth/login
  * 
  * @param loginData - 로그인 요청 데이터 (user_id, user_pw)
- * @returns Response
+ * @returns 로그인 응답 데이터 (access_token, email, name, token_type, user_id)
  */
-export async function login(loginData: LoginRequest): Promise<Response> {
+export async function login(loginData: LoginRequest): Promise<LoginResponse> {
   // fetchDataAsync 직접 사용 (인증이 필요 없는 API이므로 credentials 사용 안 함)
   const url = `${SERVER_URL}/api/auth/login`;
   
   try {
     const result = await fetchDataAsync(url, 'POST', loginData, false, false);
-    return result;
+    // fetchDataAsync는 성공 시 파싱된 데이터를 반환하므로 타입 캐스팅
+    return result as LoginResponse;
   } catch (error) {
     console.error(error);
     throw error;

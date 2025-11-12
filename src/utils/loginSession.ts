@@ -1,5 +1,6 @@
 import { setCookie } from './common';
-import { getLoginUserInfoFetch, refreshAccessTokenFetch } from '../api/login';
+import { refreshAccessTokenFetch } from '../api/login';
+import { getCurrentUser } from '../api/users';
 
 // http only 로그아웃
 export async function logout(): Promise<void> {
@@ -8,7 +9,7 @@ export async function logout(): Promise<void> {
 }
 
 export async function getLoginUserEmail(): Promise<string> {
-  const response = await getLoginUserInfoFetch();
+  const response = await getCurrentUser();
   if (response.ok) {
     const user = await response.json();
     return user.email;
@@ -19,7 +20,7 @@ export async function getLoginUserEmail(): Promise<string> {
 // 로그인 유저 정보 조회 API
 export async function getLoginUserInfo(): Promise<boolean> {
   try {
-    const response = await getLoginUserInfoFetch();
+    const response = await getCurrentUser();
 
     if (response.ok) {
       await response.json();

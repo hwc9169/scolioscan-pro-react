@@ -1,5 +1,5 @@
 import { SERVER_URL } from '../utils/server';
-import { getCookie } from '../utils/common';
+import { fetchDataAsync } from '../utils/common';
 
 /**
  * 현재 사용자 정보 응답 타입
@@ -45,16 +45,31 @@ export interface UpdateUserSettingsRequest {
  * @returns 현재 로그인한 사용자 정보
  */
 export async function getCurrentUser(): Promise<Response> {
-  const accessToken = getCookie('userAccessToken');
-  const response = await fetch(`${SERVER_URL}/api/users/me`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken || ''}`,
-    },
-    credentials: 'include',
-  });
-  return response;
+  // fetchDataAsync 직접 사용
+  const url = `${SERVER_URL}/api/users/me`;
+  
+  try {
+    const result = await fetchDataAsync(url, 'GET', {}, false, true);
+    
+    // fetchDataAsync는 성공 시 파싱된 데이터를 반환하지만, Response 객체가 필요하므로
+    // result가 Response 객체인지 확인 (에러 시 Response 반환)
+    if (result instanceof Response) {
+      return result;
+    }
+    
+    // 성공 시: fetchDataAsync가 파싱된 데이터를 반환했으므로
+    // Response 객체를 생성하여 반환
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      statusText: 'OK',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
 }
 
 /**
@@ -65,17 +80,31 @@ export async function getCurrentUser(): Promise<Response> {
  * @returns Response
  */
 export async function updateUserProfile(profileData: UpdateUserProfileRequest): Promise<Response> {
-  const accessToken = getCookie('userAccessToken');
-  const response = await fetch(`${SERVER_URL}/api/users/me`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken || ''}`,
-    },
-    credentials: 'include',
-    body: JSON.stringify(profileData),
-  });
-  return response;
+  // fetchDataAsync 직접 사용
+  const url = `${SERVER_URL}/api/users/me`;
+  
+  try {
+    const result = await fetchDataAsync(url, 'PUT', profileData, false, true);
+    
+    // fetchDataAsync는 성공 시 파싱된 데이터를 반환하지만, Response 객체가 필요하므로
+    // result가 Response 객체인지 확인 (에러 시 Response 반환)
+    if (result instanceof Response) {
+      return result;
+    }
+    
+    // 성공 시: fetchDataAsync가 파싱된 데이터를 반환했으므로
+    // Response 객체를 생성하여 반환
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      statusText: 'OK',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
 }
 
 /**
@@ -86,16 +115,30 @@ export async function updateUserProfile(profileData: UpdateUserProfileRequest): 
  * @returns Response
  */
 export async function updateUserSettings(settingsData: UpdateUserSettingsRequest): Promise<Response> {
-  const accessToken = getCookie('userAccessToken');
-  const response = await fetch(`${SERVER_URL}/api/users/me/settings`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken || ''}`,
-    },
-    credentials: 'include',
-    body: JSON.stringify(settingsData),
-  });
-  return response;
+  // fetchDataAsync 직접 사용
+  const url = `${SERVER_URL}/api/users/me/settings`;
+  
+  try {
+    const result = await fetchDataAsync(url, 'PUT', settingsData, false, true);
+    
+    // fetchDataAsync는 성공 시 파싱된 데이터를 반환하지만, Response 객체가 필요하므로
+    // result가 Response 객체인지 확인 (에러 시 Response 반환)
+    if (result instanceof Response) {
+      return result;
+    }
+    
+    // 성공 시: fetchDataAsync가 파싱된 데이터를 반환했으므로
+    // Response 객체를 생성하여 반환
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      statusText: 'OK',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
 }
 
