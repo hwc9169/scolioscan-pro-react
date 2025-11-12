@@ -39,19 +39,32 @@ export interface MarkAlarmReadValidationErrorResponse {
  * 알림 목록 조회 API
  * GET /api/alarms/
  * 
- * @returns 알림 목록 배열
+ * @returns 알림 목록 배열 또는 Response (에러 시)
  */
-export async function getAlarms(): Promise<Response> {
-  const accessToken = getCookie('userAccessToken');
-  const response = await fetch(`${SERVER_URL}/api/alarms/`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken || ''}`,
-    },
-    credentials: 'include',
-  });
-  return response;
+export async function getAlarms(): Promise<Alarm[] | Response> {
+  const url = `${SERVER_URL}/api/alarms/`;
+  
+  try {
+    const result = await fetchDataAsync(url, 'GET', {}, false, true);
+    
+    // fetchDataAsync는 성공 시 파싱된 데이터를 반환하고, 에러 시 Response를 반환
+    if (result instanceof Response) {
+      // 에러 응답인 경우
+      return result;
+    }
+    
+    // 성공 시: 배열인지 확인
+    if (Array.isArray(result)) {
+      return result as Alarm[];
+    }
+    
+    // 배열이 아닌 경우 (예상치 못한 형식)
+    console.warn('getAlarms - 배열이 아닌 데이터:', result);
+    return [];
+  } catch (error) {
+    console.error('알림 목록 조회 실패:', error);
+    throw error;
+  }
 }
 
 /**

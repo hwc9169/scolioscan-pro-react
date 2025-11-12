@@ -1,10 +1,12 @@
-import { type ReactElement, useState, useEffect } from 'react';
+import { type ReactElement, useState, useEffect, useMemo, useRef } from 'react';
 import { InputNormal } from '../input/InputNormal';
+import { BirthSelect } from '../select/BirthSelect';
 import IconArrowLeft from '../../assets/icon_svg/ProfileEdit/IconArrowLeft.svg';
 import type { InputState } from '../../types/input';
 import { useToast } from '../../contexts/ToastContext';
 import { useFullSheet } from '../../hooks/useFullSheet';
 import { useAppData } from '../../contexts/AppDataContext';
+import { updateUserProfile, type UpdateUserProfileRequest } from '../../api/users';
 
 /**
  * 프로필 수정 페이지
@@ -12,7 +14,7 @@ import { useAppData } from '../../contexts/AppDataContext';
 export function ProfileEdit(): ReactElement {
   const { showToast } = useToast();
   const { popFullSheet } = useFullSheet();
-  const { appData } = useAppData();
+  const { appData, refreshUserData } = useAppData();
   const { user, isLoading } = appData;
   
   // 폼 상태
@@ -32,23 +34,104 @@ export function ProfileEdit(): ReactElement {
   
   const [email, setEmail] = useState('');
   const [emailState, setEmailState] = useState<InputState>('keyout-empty');
+  const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
+  
+  // 초기 값 저장 (변경 사항 감지용)
+  const initialValuesRef = useRef<{
+    name: string;
+    birthYear: string;
+    birthMonth: string;
+    birthDay: string;
+    gender: 'male' | 'female';
+  }>({
+    name: '',
+    birthYear: '',
+    birthMonth: '',
+    birthDay: '',
+    gender: 'male',
+  });
+
+  // 오늘 날짜 기준 연도 리스트 생성 (현재 연도부터 1900년까지)
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const years: string[] = [];
+    for (let year = currentYear; year >= 1900; year--) {
+      years.push(year.toString());
+    }
+    return years;
+  }, []);
+
+  // 월 리스트 생성 (1-12월, 오늘 날짜까지 제한)
+  const monthOptions = useMemo(() => {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth() + 1;
+    
+    // 선택된 연도가 현재 연도인 경우, 현재 월까지만 표시
+    let maxMonth = 12;
+    if (birthYear) {
+      const selectedYear = parseInt(birthYear, 10);
+      if (selectedYear === currentYear) {
+        maxMonth = currentMonth;
+      }
+    }
+    
+    return Array.from({ length: maxMonth }, (_, i) => {
+      const month = i + 1;
+      return month.toString().padStart(2, '0');
+    });
+  }, [birthYear]);
+
+  // 일 리스트 생성 (선택된 연도와 월에 따라, 오늘 날짜까지 제한)
+  const dayOptions = useMemo(() => {
+    if (!birthYear || !birthMonth) {
+      return Array.from({ length: 31 }, (_, i) => {
+        const day = i + 1;
+        return day.toString().padStart(2, '0');
+      });
+    }
+
+    const year = parseInt(birthYear, 10);
+    const month = parseInt(birthMonth, 10);
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth() + 1;
+    const currentDay = today.getDate();
+    
+    // 해당 월의 마지막 날짜 계산
+    const daysInMonth = new Date(year, month, 0).getDate();
+    let maxDay = daysInMonth;
+    
+    // 오늘 날짜를 넘어가지 않도록 제한
+    if (year === currentYear && month === currentMonth) {
+      maxDay = currentDay;
+    }
+    
+    return Array.from({ length: maxDay }, (_, i) => {
+      const day = i + 1;
+      return day.toString().padStart(2, '0');
+    });
+  }, [birthYear, birthMonth]);
 
   // 사용자 정보가 로드되면 폼에 채우기
   useEffect(() => {
     if (user && !isLoading) {
       // 이름
-      if (user.name) {
-        setName(user.name);
-        setNameState('keyout-typed');
-      }
+      const userName = user.name || '';
+      setName(userName);
+      setNameState(userName ? 'keyout-typed' : 'keyout-empty');
+      initialValuesRef.current.name = userName;
 
       // 생년월일 (ISO 8601 형식에서 파싱)
+      let year = '';
+      let month = '';
+      let day = '';
       if (user.birthday) {
         const birthDate = new Date(user.birthday);
         if (!isNaN(birthDate.getTime())) {
-          const year = birthDate.getFullYear().toString();
-          const month = String(birthDate.getMonth() + 1).padStart(2, '0');
-          const day = String(birthDate.getDate()).padStart(2, '0');
+          year = birthDate.getFullYear().toString();
+          month = String(birthDate.getMonth() + 1).padStart(2, '0');
+          day = String(birthDate.getDate()).padStart(2, '0');
           
           setBirthYear(year);
           setBirthYearState('keyout-typed');
@@ -58,9 +141,14 @@ export function ProfileEdit(): ReactElement {
           setBirthDayState('keyout-typed');
         }
       }
+      initialValuesRef.current.birthYear = year;
+      initialValuesRef.current.birthMonth = month;
+      initialValuesRef.current.birthDay = day;
 
       // 성별 (boolean: true = 여성, false = 남성)
-      setGender(user.sex ? 'female' : 'male');
+      const userGender = user.sex ? 'female' : 'male';
+      setGender(userGender);
+      initialValuesRef.current.gender = userGender;
 
       // 이메일 (user_id 사용)
       if (user.user_id) {
@@ -81,12 +169,18 @@ export function ProfileEdit(): ReactElement {
 
   const handleNameChange = (value: string) => {
     setName(value);
+    
+    // 입력 중에는 에러 메시지 제거 및 일반 상태로 변경
+    if (errorMessage) {
+      setErrorMessage(undefined);
+    }
     setNameState(value ? 'keyin-typing' : 'keyin-empty');
   };
 
   const handleNameClear = () => {
     setName('');
     setNameState('keyin-empty');
+    setErrorMessage(undefined);
   };
 
   // 생년월일 핸들러
@@ -101,6 +195,30 @@ export function ProfileEdit(): ReactElement {
   const handleBirthYearChange = (value: string) => {
     setBirthYear(value);
     setBirthYearState(value ? 'keyin-typing' : 'keyin-empty');
+    
+    // 년도가 변경되면 일자 리스트가 바뀔 수 있으므로 일자 재검증
+    if (birthDay) {
+      const year = parseInt(value, 10);
+      const month = parseInt(birthMonth, 10);
+      if (month) {
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        const currentMonth = today.getMonth() + 1;
+        const currentDay = today.getDate();
+        
+        let maxDay = new Date(year, month, 0).getDate();
+        if (year === currentYear && month === currentMonth) {
+          maxDay = currentDay;
+        }
+        
+        const selectedDay = parseInt(birthDay, 10);
+        if (selectedDay > maxDay) {
+          // 선택된 일자가 유효하지 않으면 초기화
+          setBirthDay('');
+          setBirthDayState('keyin-empty');
+        }
+      }
+    }
   };
 
   const handleBirthMonthFocus = () => {
@@ -114,6 +232,30 @@ export function ProfileEdit(): ReactElement {
   const handleBirthMonthChange = (value: string) => {
     setBirthMonth(value);
     setBirthMonthState(value ? 'keyin-typing' : 'keyin-empty');
+    
+    // 월이 변경되면 일자 리스트가 바뀔 수 있으므로 일자 재검증
+    if (birthDay) {
+      const year = parseInt(birthYear, 10);
+      const month = parseInt(value, 10);
+      if (year) {
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        const currentMonth = today.getMonth() + 1;
+        const currentDay = today.getDate();
+        
+        let maxDay = new Date(year, month, 0).getDate();
+        if (year === currentYear && month === currentMonth) {
+          maxDay = currentDay;
+        }
+        
+        const selectedDay = parseInt(birthDay, 10);
+        if (selectedDay > maxDay) {
+          // 선택된 일자가 유효하지 않으면 초기화
+          setBirthDay('');
+          setBirthDayState('keyin-empty');
+        }
+      }
+    }
   };
 
   const handleBirthDayFocus = () => {
@@ -129,20 +271,6 @@ export function ProfileEdit(): ReactElement {
     setBirthDayState(value ? 'keyin-typing' : 'keyin-empty');
   };
 
-  const handleBirthYearClear = () => {
-    setBirthYear('');
-    setBirthYearState('keyin-empty');
-  };
-
-  const handleBirthMonthClear = () => {
-    setBirthMonth('');
-    setBirthMonthState('keyin-empty');
-  };
-
-  const handleBirthDayClear = () => {
-    setBirthDay('');
-    setBirthDayState('keyin-empty');
-  };
 
   // 이메일 핸들러
   const handleEmailFocus = () => {
@@ -163,16 +291,55 @@ export function ProfileEdit(): ReactElement {
     setEmailState('keyin-empty');
   };
 
+  // 변경 사항이 있는지 확인
+  const hasChanges = useMemo(() => {
+    const initial = initialValuesRef.current;
+    const currentName = name.trim();
+    const initialName = initial.name.trim();
+    
+    // 이름 변경 확인
+    if (currentName !== initialName) {
+      return true;
+    }
+    
+    // 생년월일 변경 확인
+    if (birthYear !== initial.birthYear || 
+        birthMonth !== initial.birthMonth || 
+        birthDay !== initial.birthDay) {
+      return true;
+    }
+    
+    // 성별 변경 확인
+    if (gender !== initial.gender) {
+      return true;
+    }
+    
+    return false;
+  }, [name, birthYear, birthMonth, birthDay, gender]);
+
   // 저장 핸들러
   const handleSave = async () => {
     try {
+      // 이름 유효성 검사: 저장 시에만 검사
+      const trimmedName = name.trim();
+      if (trimmedName.length > 8) {
+        // 8자 초과: 빨간색 경고 표시
+        setErrorMessage('최대 8자까지 입력 가능합니다');
+        setNameState('keyout-error');
+        return;
+      }
+      
+      // 유효성 검사 통과: 에러 메시지 제거
+      setErrorMessage(undefined);
+      setNameState('keyout-empty');
+      
       // 생년월일을 ISO 8601 형식으로 변환
       // 년/월/일 중 하나라도 입력되어 있으면 변환 시도
-      let birthdayISO = '';
-      if (birthYear || birthMonth || birthDay) {
-        const year = birthYear ? parseInt(birthYear, 10) : new Date().getFullYear();
-        const month = birthMonth ? parseInt(birthMonth, 10) - 1 : 0; // JavaScript Date는 0부터 시작
-        const day = birthDay ? parseInt(birthDay, 10) : 1;
+      let birthdayISO: string | undefined = undefined;
+      if (birthYear && birthMonth && birthDay) {
+        const year = parseInt(birthYear, 10);
+        const month = parseInt(birthMonth, 10) - 1; // JavaScript Date는 0부터 시작
+        const day = parseInt(birthDay, 10);
         
         // UTC 기준으로 날짜 생성 (시간대 변환 문제 방지)
         const birthDate = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
@@ -185,38 +352,61 @@ export function ProfileEdit(): ReactElement {
       const sex = gender === 'female';
 
       // 프로필 업데이트 데이터 준비
-      // API 스펙에 맞게 필요한 필드만 전송 (이메일은 수정 불가)
-      const updateData: {
-        name?: string;
-        phone?: string;
-        address?: string;
-        detail_address?: string;
-        birthday?: string;
-        sex?: boolean;
-      } = {};
+      const updateData: UpdateUserProfileRequest = {};
 
-      // 이름
-      if (name) {
-        updateData.name = name;
+      // 이름 (변경된 경우만 전송)
+      if (trimmedName !== initialValuesRef.current.name.trim()) {
+        updateData.name = trimmedName;
       }
 
-      // 생년월일 (변환된 값이 있으면 전송)
-      if (birthdayISO) {
-        updateData.birthday = birthdayISO;
+      // 생년월일 (변경된 경우만 전송)
+      const initialBirthday = initialValuesRef.current;
+      if (birthYear !== initialBirthday.birthYear || 
+          birthMonth !== initialBirthday.birthMonth || 
+          birthDay !== initialBirthday.birthDay) {
+        if (birthdayISO) {
+          updateData.birthday = birthdayISO;
+        }
       }
 
-      // 성별 (항상 전송)
-      updateData.sex = sex;
+      // 성별 (변경된 경우만 전송)
+      if (gender !== initialValuesRef.current.gender) {
+        updateData.sex = sex;
+      }
+
+      // 변경 사항이 없으면 API 호출하지 않음
+      if (Object.keys(updateData).length === 0) {
+        showToast('변경된 내용이 없습니다.');
+        return;
+      }
 
       // 디버깅: 전송할 데이터 확인
       console.log('프로필 업데이트 데이터:', updateData);
 
-      // TODO: API 호출
-      // const response = await userAPI.updateProfile(updateData);
+      // API 호출
+      const response = await updateUserProfile(updateData);
       
-      // 임시: 저장 성공 처리
-      showToast('프로필이 저장되었습니다.');
-      popFullSheet();
+      if (response.ok) {
+        // 저장 성공: 초기 값 업데이트
+        initialValuesRef.current = {
+          name: trimmedName,
+          birthYear,
+          birthMonth,
+          birthDay,
+          gender,
+        };
+        
+        // 사용자 정보 새로고침
+        await refreshUserData();
+        
+        showToast('프로필이 저장되었습니다.');
+        popFullSheet();
+      } else {
+        // 저장 실패
+        const errorData = await response.json().catch(() => ({}));
+        console.error('프로필 저장 실패:', errorData);
+        showToast('프로필 저장 중 오류가 발생했습니다.');
+      }
     } catch (error) {
       console.error('프로필 저장 실패:', error);
       showToast('프로필 저장 중 오류가 발생했습니다.');
@@ -228,7 +418,7 @@ export function ProfileEdit(): ReactElement {
       {/* 헤더 */}
       <div className="box-border content-stretch flex h-[68px] items-center justify-between p-[20px] relative shrink-0 w-full">
         <button
-          onClick={() => popFullSheet()}
+          onClick={() => popFullSheet({ exitAnimationDirection: 'right' })}
           className="content-stretch flex gap-[10px] items-center relative shrink-0"
         >
           <div className="relative shrink-0 size-[24px]">
@@ -255,8 +445,9 @@ export function ProfileEdit(): ReactElement {
             </p>
             <InputNormal
               value={name}
-              placeholder="이름을 입력해주세요"
+              placeholder="홍길동"
               state={nameState}
+              errorMessage={errorMessage}
               className="content-stretch flex flex-col gap-[8px] h-[72px] items-start relative shrink-0 w-full"
               onChange={handleNameChange}
               onFocus={handleNameFocus}
@@ -271,46 +462,42 @@ export function ProfileEdit(): ReactElement {
               생년월일
             </p>
             <div className="content-stretch flex gap-[8px] items-start relative shrink-0 w-full">
+              {/* 년도 */}
               <div className="basis-0 content-stretch flex flex-col gap-[8px] grow h-[72px] items-start min-h-px min-w-px relative shrink-0">
-                <InputNormal
+                <BirthSelect
                   value={birthYear}
-                  placeholder="년"
+                  placeholder=" YYYY"
                   state={birthYearState}
-                  type="number"
-                  maxLength={4}
-                  className="w-full"
+                  options={yearOptions}
                   onChange={handleBirthYearChange}
                   onFocus={handleBirthYearFocus}
                   onBlur={handleBirthYearBlur}
-                  onClear={handleBirthYearClear}
                 />
               </div>
+              
+              {/* 월 */}
               <div className="content-stretch flex flex-col gap-[8px] h-[72px] items-start relative shrink-0 w-[100px]">
-                <InputNormal
+                <BirthSelect
                   value={birthMonth}
-                  placeholder="월"
+                  placeholder="MM"
                   state={birthMonthState}
-                  type="number"
-                  maxLength={2}
-                  className="w-full"
+                  options={monthOptions}
                   onChange={handleBirthMonthChange}
                   onFocus={handleBirthMonthFocus}
                   onBlur={handleBirthMonthBlur}
-                  onClear={handleBirthMonthClear}
                 />
               </div>
+              
+              {/* 일 */}
               <div className="content-stretch flex flex-col gap-[8px] h-[72px] items-start relative shrink-0 w-[100px]">
-                <InputNormal
+                <BirthSelect
                   value={birthDay}
-                  placeholder="일"
+                  placeholder="DD"
                   state={birthDayState}
-                  type="number"
-                  maxLength={2}
-                  className="w-full"
+                  options={dayOptions}
                   onChange={handleBirthDayChange}
                   onFocus={handleBirthDayFocus}
                   onBlur={handleBirthDayBlur}
-                  onClear={handleBirthDayClear}
                 />
               </div>
             </div>
@@ -321,44 +508,71 @@ export function ProfileEdit(): ReactElement {
             <p className="[white-space-collapse:collapse] font-['Pretendard_Variable:Medium',sans-serif] leading-[20px] not-italic overflow-ellipsis overflow-hidden relative shrink-0 text-[#2b2f36] text-[15px] text-nowrap w-full">
               성별
             </p>
-            <div className="content-stretch flex gap-[8px] h-[72px] items-start relative shrink-0 w-full">
+            <div className="content-stretch flex gap-[8px] items-start relative shrink-0 w-full">
+              {/* 남성 */}
               <button
                 type="button"
                 onClick={() => setGender('male')}
-                className={`basis-0 box-border content-stretch flex grow h-[52px] items-center min-h-px min-w-px pl-[16px] pr-[12px] py-0 relative rounded-[6px] shrink-0 ${
-                  gender === 'male'
-                    ? 'bg-[#edfdfc] border border-[#2c9696] border-solid'
-                    : 'bg-[#f3f4f7] border border-[rgba(0,0,0,0.04)] border-solid'
-                }`}
-              >
-                <p
-                  className={`[white-space-collapse:collapse] basis-0 font-['Pretendard_Variable',sans-serif] grow leading-[20px] min-h-px min-w-px not-italic overflow-ellipsis overflow-hidden relative shrink-0 text-[15px] text-center text-nowrap ${
+                className={`
+                  basis-0 flex items-center grow h-[60px] min-h-px min-w-px
+                  pl-[16px] pr-[12px] py-0 rounded-[6px]
+                  relative shrink-0
+                  border border-solid transition-colors
+                  ${
                     gender === 'male'
-                      ? 'font-bold text-[#2c9696]'
-                      : 'font-medium text-[#7e89a0]'
-                  }`}
-                >
+                      ? 'bg-mint-25 border-primary-500'
+                      : 'bg-gray-50 border-[rgba(0,0,0,0.04)]'
+                  }
+                `}
+              >
+                <span className={`
+                  basis-0 grow min-h-px min-w-px
+                  font-['Pretendard_Variable',sans-serif]
+                  text-[18px] leading-[24px]
+                  text-center whitespace-nowrap
+                  overflow-hidden overflow-ellipsis
+                  relative shrink-0
+                  ${
+                    gender === 'male'
+                      ? 'font-bold text-primary-500'
+                      : 'font-medium text-gray-400'
+                  }
+                `}>
                   남성
-                </p>
+                </span>
               </button>
+              
+              {/* 여성 */}
               <button
                 type="button"
                 onClick={() => setGender('female')}
-                className={`basis-0 box-border content-stretch flex grow h-[52px] items-center min-h-px min-w-px pl-[16px] pr-[12px] py-0 relative rounded-[6px] shrink-0 ${
-                  gender === 'female'
-                    ? 'bg-[#edfdfc] border border-[#2c9696] border-solid'
-                    : 'bg-[#f3f4f7] border border-[rgba(0,0,0,0.04)] border-solid'
-                }`}
-              >
-                <p
-                  className={`[white-space-collapse:collapse] basis-0 font-['Pretendard_Variable',sans-serif] grow leading-[20px] min-h-px min-w-px not-italic overflow-ellipsis overflow-hidden relative shrink-0 text-[15px] text-center text-nowrap ${
+                className={`
+                  basis-0 flex items-center grow h-[60px] min-h-px min-w-px
+                  pl-[16px] pr-[12px] py-0 rounded-[6px]
+                  relative shrink-0
+                  border border-solid transition-colors
+                  ${
                     gender === 'female'
-                      ? 'font-bold text-[#2c9696]'
-                      : 'font-medium text-[#7e89a0]'
-                  }`}
-                >
+                      ? 'bg-mint-25 border-primary-500'
+                      : 'bg-gray-50 border-[rgba(0,0,0,0.04)]'
+                  }
+                `}
+              >
+                <span className={`
+                  basis-0 grow min-h-px min-w-px
+                  font-['Pretendard_Variable',sans-serif]
+                  text-[18px] leading-[24px]
+                  text-center whitespace-nowrap
+                  overflow-hidden overflow-ellipsis
+                  relative shrink-0
+                  ${
+                    gender === 'female'
+                      ? 'font-bold text-primary-500'
+                      : 'font-medium text-gray-400'
+                  }
+                `}>
                   여성
-                </p>
+                </span>
               </button>
             </div>
           </div>
@@ -392,9 +606,14 @@ export function ProfileEdit(): ReactElement {
           <button
             type="button"
             onClick={handleSave}
-            className="bg-[#2c9696] box-border content-stretch flex gap-[6px] h-[48px] items-center justify-center px-[14px] py-0 relative rounded-[6px] shrink-0 w-full"
+            disabled={!hasChanges}
+            className={`box-border content-stretch flex gap-[6px] h-[48px] items-center justify-center px-[14px] py-0 relative rounded-[6px] shrink-0 w-full transition-colors ${
+              hasChanges
+                ? 'bg-[#2c9696] text-white cursor-pointer hover:bg-[#2c9696]/90'
+                : 'bg-[#2c9696] text-white opacity-50 cursor-not-allowed'
+            }`}
           >
-            <p className="font-['Pretendard_Variable:Medium',sans-serif] leading-[22px] not-italic relative shrink-0 text-[16px] text-nowrap text-white whitespace-pre">
+            <p className="font-['Pretendard_Variable:Medium',sans-serif] leading-[22px] not-italic relative shrink-0 text-[16px] text-nowrap whitespace-pre">
               저장
             </p>
           </button>

@@ -1,6 +1,8 @@
 import { type ReactElement, useState, useEffect, useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useAppData } from '../contexts/AppDataContext';
+import { useFullSheet } from '../hooks/useFullSheet';
+import { AlarmList } from '../components/FullSheet/AlarmListFullSheet';
 import { getAnalyses, type Analysis } from '../api/analysis';
 import BellIcon from '../assets/icon_svg/BellIcon.svg';
 import Badge from '../assets/icon_svg/Badge.svg';
@@ -148,8 +150,13 @@ function MeasurementCard({
  */
 export function Analysis(): ReactElement {
   const { appData } = useAppData();
+  const { openFullSheet } = useFullSheet();
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const handleAlarmClick = () => {
+    openFullSheet(AlarmList, {}, { animationDirection: 'right' });
+  };
 
   // 분석 데이터 로드
   useEffect(() => {
@@ -309,7 +316,10 @@ export function Analysis(): ReactElement {
           </div>
         </div>
         <div className="content-stretch flex gap-[14px] items-center relative shrink-0">
-          <div className="relative shrink-0 size-[28px]">
+          <button
+            onClick={handleAlarmClick}
+            className="relative shrink-0 size-[28px] cursor-pointer"
+          >
             <div className="absolute left-0 size-[32.667px] top-0">
               <div className="absolute inset-[12.5%_16.67%]">
                 <div className="absolute inset-[-4.76%_-5.36%]">
@@ -332,7 +342,7 @@ export function Analysis(): ReactElement {
                 </div>
               </>
             )}
-          </div>
+          </button>
         </div>
       </div>
 

@@ -1,6 +1,8 @@
 import { type ReactElement, useState, useEffect } from 'react';
 import { BannerSlider } from '../components/BannerSlider';
 import { useAppData } from '../contexts/AppDataContext';
+import { useFullSheet } from '../hooks/useFullSheet';
+import { AlarmList } from '../components/FullSheet/AlarmListFullSheet';
 // 공통 아이콘
 import BellIcon from '../assets/icon_svg/BellIcon.svg';
 import Badge from '../assets/icon_svg/Badge.svg';
@@ -137,7 +139,12 @@ function CardHomemenu({
  */
 export function Home(): ReactElement {
   const { appData } = useAppData();
+  const { openFullSheet } = useFullSheet();
   const [bannerImage, setBannerImage] = useState(BannerImage1);
+
+  const handleAlarmClick = () => {
+    openFullSheet(AlarmList, {}, { animationDirection: 'right' });
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -169,7 +176,10 @@ export function Home(): ReactElement {
           </div>
         </div>
         <div className="content-stretch flex gap-[14px] items-center relative shrink-0">
-          <div className="relative shrink-0 size-[28px]">
+          <button
+            onClick={handleAlarmClick}
+            className="relative shrink-0 size-[28px] cursor-pointer"
+          >
             <div className="absolute left-0 size-[32.667px] top-0">
               <div className="absolute inset-[12.5%_16.67%]">
                 <div className="absolute inset-[-4.76%_-5.36%]">
@@ -192,7 +202,7 @@ export function Home(): ReactElement {
                 </div>
               </>
             )}
-          </div>
+          </button>
         </div>
       </div>
 
