@@ -8,6 +8,8 @@ import { SignupEmailFullSheet } from '../components/FullSheet/SignupEmailFullShe
 import { PasswordResetFullSheet } from '../components/FullSheet/PasswordResetFullSheet';
 import { SIGNUP_DATA_KEY, type SignupData } from '../types/signup';
 import { IconNextVineLogo } from '../assets/Icon';
+// import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { login } from '../api/auth';
 import { setCookie } from '../utils/common';
 
@@ -15,12 +17,15 @@ export function Login(): ReactElement {
   const navigate = useNavigate();
   const { pushFullSheet } = useFullSheet();
   const cache = useCacheStorage();
+  // const { login } = useAuth();
+  const { showToast } = useToast();
   const [email, setEmail] = useState('test02@gmail.com');
   const [password, setPassword] = useState('test!@34');
   const [emailState, setEmailState] = useState<'keyout-empty' | 'keyin-empty' | 'keyin-typing' | 'keyout-error'>('keyin-typing');
   const [passwordState, setPasswordState] = useState<'keyout-empty' | 'keyin-empty' | 'keyin-typing' | 'keyout-error'>('keyin-typing');
   const [emailError, setEmailError] = useState<string | undefined>(undefined);
   const [passwordError, setPasswordError] = useState<string | undefined>(undefined);
+  const [loading, setLoading] = useState(false);
 
   const handleEmailFocus = () => {
     setEmailState(email ? 'keyin-typing' : 'keyin-empty');
@@ -82,42 +87,40 @@ export function Login(): ReactElement {
     
     if (hasError) {
       return;
-    };
-    
-    try{
-      const response = await login({
-        "user_id": email,
-        "user_pw": password,
-      });
-      
-      // access_token을 쿠키에 저장
-      setCookie('userAccessToken', response.access_token);
-      
-      console.log('로그인 성공:', {
-        email: response.email,
-        name: response.name,
-        user_id: response.user_id,
-      });
-      
-      // 로그인 성공 후 Splash 페이지로 이동 (Splash에서 토큰 확인 후 Home으로 이동)
-      navigate('/', { replace: true });
-    }catch(error){
-      console.error('로그인 실패:', error);
     }
+    
+    setLoading(true);
+    setEmailError(undefined);
+    setPasswordError(undefined);
 
-
-
-    // if (response.status === 200 && response.data) {
-    //   // 로그인 성공 시 토큰 저장
-    //   setCookie('userAccessToken', response.data.accessToken);
-    //   localStorage.setItem('userRefreshToken', response.data.refreshToken);
-    //   // 로그인 성공 시 홈 페이지로 이동
-    //   navigate('/home', { replace: true });
-    // } else {
-    //   // 로그인 실패 시 토스트 알림만 표시
-    //   const errorMessage = response.message || '로그인에 실패했습니다.';
-    //   showToast(errorMessage);
-    // };
+    try {
+      // 로그인 API 호출
+      const loginResponse = await login({
+        user_id: email,
+        user_pw: password,
+      });
+      
+      // 로그인 성공 시 액세스 토큰을 쿠키에 저장
+      if (loginResponse.access_token) {
+        setCookie('userAccessToken', loginResponse.access_token);
+      }
+      
+      // Refresh Token이 있다면 localStorage에 저장 (필요한 경우)
+      // if (loginResponse.refresh_token) {
+      //   localStorage.setItem('userRefreshToken', loginResponse.refresh_token);
+      // }
+      
+      // 스플래시 페이지로 이동 (스플래시에서 사용자 정보 조회 후 홈으로 이동)
+      navigate('/', { replace: true });
+    } catch (error: unknown) {
+      console.error('로그인 실패:', error);
+      const errorMessage = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || '로그인에 실패했습니다.';
+      showToast(errorMessage);
+      setPasswordError(errorMessage);
+      setPasswordState('keyout-error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -184,9 +187,10 @@ export function Login(): ReactElement {
               color="primary"
               size="big"
               onClick={handleLogin}
+              disabled={loading}
               className="w-full"
             >
-              로그인
+              {loading ? '로그인 중...' : '로그인'}
             </DefaultBtn>
             <DefaultBtn
               variant="text"

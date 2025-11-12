@@ -2,7 +2,6 @@ import { type ReactElement, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getLoginUserInfo } from '../utils/loginSession';
 import { getCookie } from '../utils/common';
-import { useAppData } from '../contexts/AppDataContext';
 
 /**
  * 스플래시 페이지
@@ -13,7 +12,6 @@ import { useAppData } from '../contexts/AppDataContext';
  */
 export function Splash(): ReactElement {
   const navigate = useNavigate();
-  const { refreshAllData } = useAppData();
 
   useEffect(() => {
     const checkAuthAndNavigate = async () => {
@@ -27,12 +25,12 @@ export function Splash(): ReactElement {
           return;
         }
 
-        // 로그인 상태 확인 및 데이터 조회
+        // 로그인 상태 확인만 수행 (데이터는 AppDataContext가 자동으로 로드함)
         const isAuthenticated = await getLoginUserInfo();
         
         if (isAuthenticated) {
-          // 전역 데이터 로드 (사용자 정보, 알람 개수 등)
-          await refreshAllData();
+          // AppDataContext의 useEffect가 이미 refreshAllData()를 호출하므로
+          // 여기서는 호출하지 않음 (중복 호출 방지)
           
           // 홈 페이지로 이동
           navigate('/home', { replace: true });
@@ -47,7 +45,8 @@ export function Splash(): ReactElement {
     };
 
     checkAuthAndNavigate();
-  }, [navigate, refreshAllData]);
+  }, [navigate]);
+  // refreshAllData를 의존성 배열에서 제거 (AppDataContext가 자동으로 호출하므로)
 
   // 스플래시 화면 (로딩 중 표시)
   return (

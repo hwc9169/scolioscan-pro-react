@@ -18,6 +18,7 @@ import Setting from '../assets/icon_svg/My/Setting.svg';
 import MessageQuestion from '../assets/icon_svg/My/MessageQuestion.svg';
 
 import { NavigationBottom } from '../components/NavigationBottom';
+// import { useAuth } from '../contexts/AuthContext';
 
 // 로컬 아이콘 에셋 매핑
 const img5 = AppIcon1;
@@ -36,7 +37,13 @@ const img4 = MessageQuestion;
  */
 export function My(): ReactElement {
   const navigate = useNavigate();
+  // const { logout } = useAuth();
   const [bannerImage, setBannerImage] = useState(BannerImage1);
+
+  const handleLogout = () => {
+    // logout();
+    navigate('/login', { replace: true });
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -258,9 +265,12 @@ export function My(): ReactElement {
 
         {/* 로그아웃 */}
         <div className="box-border content-stretch flex flex-col gap-[20px] items-center pb-[60px] pt-[32px] px-[20px] relative shrink-0 w-full">
-          <p className="font-['Manrope:Medium','Noto_Sans_KR:Medium',sans-serif] font-medium leading-[20px] relative shrink-0 text-[#52a8ff] text-[14px] text-nowrap tracking-[0.28px] whitespace-pre">
+          <button
+            onClick={handleLogout}
+            className="font-['Manrope:Medium','Noto_Sans_KR:Medium',sans-serif] font-medium leading-[20px] relative shrink-0 text-[#52a8ff] text-[14px] text-nowrap tracking-[0.28px] whitespace-pre cursor-pointer hover:opacity-80 transition-opacity"
+          >
             로그아웃
-          </p>
+          </button>
         </div>
       </div>
 
