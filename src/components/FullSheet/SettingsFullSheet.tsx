@@ -1,13 +1,13 @@
 import { type ReactElement, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import IconArrowLeft from '../../assets/icon_svg/ProfileEdit/IconArrowLeft.svg';
 import IconToggle from '../../assets/icon_svg/Settings/IconToggle.svg';
+import { useFullSheet } from '../../hooks/useFullSheet';
 
 /**
  * 환경 설정 페이지
  */
 export function Settings(): ReactElement {
-  const navigate = useNavigate();
+  const { popFullSheet } = useFullSheet();
 
   // 토글 상태
   const [cellularData, setCellularData] = useState(true);
@@ -25,7 +25,7 @@ export function Settings(): ReactElement {
       otherNotifications,
       marketingConsent,
     });
-    navigate('/my');
+    popFullSheet();
   };
 
   return (
@@ -33,7 +33,7 @@ export function Settings(): ReactElement {
       {/* 헤더 */}
       <div className="box-border content-stretch flex h-[68px] items-center justify-between p-[20px] relative shrink-0 w-full">
         <button
-          onClick={() => navigate('/my')}
+          onClick={() => popFullSheet()}
           className="content-stretch flex gap-[10px] items-center relative shrink-0"
         >
           <div className="relative shrink-0 size-[24px]">

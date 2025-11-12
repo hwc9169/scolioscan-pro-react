@@ -1,16 +1,19 @@
 import { type ReactElement, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import IconArrowLeft from '../../assets/icon_svg/ProfileEdit/IconArrowLeft.svg';
 import Icon16LineChevronDown from '../../assets/icon_svg/CustomerCenter/Icon16LineChevronDown.svg';
 import IconCursor from '../../assets/icon_svg/CustomerCenter/IconCursor.svg';
 import { InputNormal } from '../input/InputNormal';
 import type { InputState } from '../../types/input';
+import { sendContact } from '../../api/contact';
+import { useToast } from '../../contexts/ToastContext';
+import { useFullSheet } from '../../hooks/useFullSheet';
 
 /**
  * 고객센터 페이지
  */
 export function CustomerCenter(): ReactElement {
-  const navigate = useNavigate();
+  const { showToast } = useToast();
+  const { popFullSheet } = useFullSheet();
 
   // 폼 상태
   const [email, setEmail] = useState('');
@@ -44,10 +47,58 @@ export function CustomerCenter(): ReactElement {
   };
 
   // 문의하기 핸들러
-  const handleSubmit = () => {
-    // TODO: 문의 API 호출
-    console.log('문의하기:', { email, inquiryType, inquiryContent });
-    navigate('/my');
+  const handleSubmit = async () => {
+    // 입력 값 검증
+    if (!email.trim()) {
+      showToast('이메일을 입력해주세요.');
+      return;
+    }
+    
+    if (!inquiryContent.trim()) {
+      showToast('문의 내용을 입력해주세요.');
+      return;
+    }
+
+    try {
+      const response = await sendContact({
+        email: email.trim(),
+        inquiry_type: inquiryType,
+        inquiry_content: inquiryContent.trim(),
+      });
+
+      if (response.ok) {
+        showToast('문의가 접수되었습니다.');
+        // 폼 초기화
+        setEmail('');
+        setEmailState('keyin-empty');
+        setInquiryType('구독 문의');
+        setInquiryContent('');
+        // FullSheet 닫기
+        popFullSheet();
+      } else {
+        // 상태 코드에 따른 메시지 우선 표시
+        let errorMessage = '문의 접수에 실패했습니다.';
+        
+        if (response.status === 500) {
+          errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+        } else if (response.status === 400) {
+          errorMessage = '입력 정보를 확인해주세요.';
+        } else if (response.status === 401) {
+          errorMessage = '로그인이 필요합니다.';
+        } else if (response.status === 403) {
+          errorMessage = '권한이 없습니다.';
+        } else if (response.status === 404) {
+          errorMessage = '요청한 페이지를 찾을 수 없습니다.';
+        } else if (response.status >= 500) {
+          errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+        }
+        
+        showToast(errorMessage);
+      }
+    } catch (error) {
+      console.error('문의 접수 실패:', error);
+      showToast('문의 접수 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    }
   };
 
   return (
@@ -55,7 +106,7 @@ export function CustomerCenter(): ReactElement {
       {/* 헤더 */}
       <div className="box-border content-stretch flex h-[68px] items-center justify-between p-[20px] relative shrink-0 w-full">
         <button
-          onClick={() => navigate('/my')}
+          onClick={() => popFullSheet()}
           className="content-stretch flex gap-[10px] items-center relative shrink-0"
         >
           <div className="relative shrink-0 size-[24px]">

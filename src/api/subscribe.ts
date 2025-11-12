@@ -4,17 +4,34 @@ import { getCookie } from '../utils/common';
 /**
  * 구독 플랜 타입 정보
  * GET /api/subscribe/types
+ * 
+ * 백엔드 스키마: SubscribeTypeResponse
+ * - id: int
+ * - name: str
+ * - price: int
+ * - description: Optional[str] (기능 리스트가 여기에 포함될 수 있음)
+ * - created_at: datetime
  */
 export interface SubscribeType {
   id: number;
   name: string;
   price: number;
-  description: string;
+  description: string | null; // 기능 리스트가 여기에 포함될 수 있음 (JSON 문자열 또는 텍스트)
   created_at: string; // ISO 8601 형식 (예: "2025-11-12T09:51:48.332Z")
 }
 
 /**
  * 구독 정보 타입
+ * 
+ * 백엔드 스키마: SubscribeResponse
+ * - id: UUID
+ * - user_uuid: UUID
+ * - subscribe_card: UUID
+ * - subscribe_type: int
+ * - started_at: datetime
+ * - ended_at: datetime
+ * - terminated_at: Optional[datetime]
+ * - created_at: datetime
  */
 export interface Subscription {
   id: string; // UUID
@@ -30,6 +47,13 @@ export interface Subscription {
 /**
  * 구독 생성 요청 데이터 타입
  * POST /api/subscribe/
+ * 
+ * 백엔드 스키마: SubscribeCreate
+ * - user_uuid: UUID
+ * - subscribe_card: UUID
+ * - subscribe_type: int
+ * - started_at: datetime
+ * - ended_at: datetime
  */
 export interface CreateSubscriptionRequest {
   user_uuid: string; // UUID
