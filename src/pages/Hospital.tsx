@@ -74,7 +74,7 @@ const DUMMY_HOSPITALS: HospitalType[] = [
 export function Hospital(): ReactElement {
   const [searchQuery, setSearchQuery] = useState('');
   const [hospitals] = useState<HospitalType[]>(DUMMY_HOSPITALS);
-  const [selectedHospital, setSelectedHospital] = useState<HospitalType | null>(DUMMY_HOSPITALS[0]);
+  const [selectedHospital] = useState<HospitalType | null>(DUMMY_HOSPITALS[0]);
   const [showList, setShowList] = useState(false);
   const [isLoading] = useState(false);
 

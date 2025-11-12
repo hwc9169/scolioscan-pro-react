@@ -36,7 +36,7 @@ function MeasurementCard({
   type,
   thoracic,
   lumber,
-  measurement,
+  measurement: _measurement,
   onClick
 }: { 
   date: string; 

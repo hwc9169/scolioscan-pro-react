@@ -28,7 +28,7 @@ export function BannerSlider({
   const [startX, setStartX] = useState(0);
   const [translateX, setTranslateX] = useState(0);
   const sliderRef = useRef<HTMLDivElement>(null);
-  const autoSlideTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoSlideTimerRef = useRef<number | null>(null);
 
   // 자동 슬라이드
   useEffect(() => {
@@ -135,7 +135,7 @@ export function BannerSlider({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {items.map((item, index) => (
+        {items.map((item) => (
           <div
             key={item.id}
             className="relative shrink-0 h-full"

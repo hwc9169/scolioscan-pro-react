@@ -1,5 +1,5 @@
 import { type ReactElement } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 // import { AuthProvider } from './contexts/AuthContext';
 import { FullSheetProvider } from './contexts/FullSheetContext';
 import { CacheStorageProvider } from './contexts/CacheStorageContext';
