@@ -1,7 +1,7 @@
 import { type ReactElement, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import IconArrowLeft from '../assets/icon_svg/ProfileEdit/IconArrowLeft.svg';
-import IconToggle from '../assets/icon_svg/Settings/IconToggle.svg';
+import IconArrowLeft from '../../assets/icon_svg/ProfileEdit/IconArrowLeft.svg';
+import IconToggle from '../../assets/icon_svg/Settings/IconToggle.svg';
 
 /**
  * 환경 설정 페이지

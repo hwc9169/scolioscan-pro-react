@@ -1,10 +1,10 @@
 import { type ReactElement, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import IconArrowLeft from '../assets/icon_svg/ProfileEdit/IconArrowLeft.svg';
-import IconCrown from '../assets/icon_svg/Subscription/IconCrown.svg';
-import Icon16LineCheck from '../assets/icon_svg/Subscription/Icon16LineCheck.svg';
-import Icon16LineCheckGray from '../assets/icon_svg/Subscription/Icon16LineCheckGray.svg';
-import IconArrowDown from '../assets/icon_svg/Subscription/IconArrowDown.svg';
+import IconArrowLeft from '../../assets/icon_svg/ProfileEdit/IconArrowLeft.svg';
+import IconCrown from '../../assets/icon_svg/Subscription/IconCrown.svg';
+import Icon16LineCheck from '../../assets/icon_svg/Subscription/Icon16LineCheck.svg';
+import Icon16LineCheckGray from '../../assets/icon_svg/Subscription/Icon16LineCheckGray.svg';
+import IconArrowDown from '../../assets/icon_svg/Subscription/IconArrowDown.svg';
 
 /**
  * 구독 설정 페이지

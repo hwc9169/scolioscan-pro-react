@@ -1,19 +1,18 @@
-import { type ReactElement, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { InputNormal } from '../components/input/InputNormal';
-import IconArrowLeft from '../assets/icon_svg/ProfileEdit/IconArrowLeft.svg';
-import type { InputState } from '../types/input';
-import { useAuth } from '../contexts/AuthContext';
-import { userAPI } from '../utils/api';
-import { useToast } from '../contexts/ToastContext';
+import { type ReactElement, useState } from 'react';
+// import { useEffect } from 'react'; // 사용자 정보 로드 시 필요
+import { InputNormal } from '../input/InputNormal';
+import IconArrowLeft from '../../assets/icon_svg/ProfileEdit/IconArrowLeft.svg';
+import type { InputState } from '../../types/input';
+import { useToast } from '../../contexts/ToastContext';
+import { useFullSheet } from '../../hooks/useFullSheet';
+// import { useAuth } from '../../contexts/AuthContext'; // 사용자 정보 로드 시 필요 (또는 다른 방식으로 대체)
 
 /**
  * 프로필 수정 페이지
  */
 export function ProfileEdit(): ReactElement {
-  const navigate = useNavigate();
-  const { user, loading, updateUser } = useAuth();
   const { showToast } = useToast();
+  const { popFullSheet } = useFullSheet();
   
   // 폼 상태
   const [name, setName] = useState('');
@@ -33,42 +32,47 @@ export function ProfileEdit(): ReactElement {
   const [email, setEmail] = useState('');
   const [emailState, setEmailState] = useState<InputState>('keyout-empty');
 
+  // TODO: 사용자 정보 로드 - 나중에 다른 방식으로 대체 예정
   // 사용자 정보가 로드되면 폼에 채우기
-  useEffect(() => {
-    if (user && !loading) {
-      // 이름
-      if (user.name) {
-        setName(user.name);
-        setNameState('keyout-typed');
-      }
-
-      // 생년월일 (ISO 8601 형식에서 파싱)
-      if (user.birthday) {
-        const birthDate = new Date(user.birthday);
-        if (!isNaN(birthDate.getTime())) {
-          const year = birthDate.getFullYear().toString();
-          const month = String(birthDate.getMonth() + 1).padStart(2, '0');
-          const day = String(birthDate.getDate()).padStart(2, '0');
-          
-          setBirthYear(year);
-          setBirthYearState('keyout-typed');
-          setBirthMonth(month);
-          setBirthMonthState('keyout-typed');
-          setBirthDay(day);
-          setBirthDayState('keyout-typed');
-        }
-      }
-
-      // 성별 (boolean: true = 여성, false = 남성)
-      setGender(user.sex ? 'female' : 'male');
-
-      // 이메일 (user_id 사용)
-      if (user.user_id) {
-        setEmail(user.user_id);
-        setEmailState('keyout-typed');
-      }
-    }
-  }, [user, loading]);
+  // useEffect(() => {
+  //   // 사용자 정보를 가져오는 로직 (예: useAuth, API 직접 호출, props 등)
+  //   // const user = ...; // 사용자 정보 가져오기
+  //   // const loading = ...; // 로딩 상태
+  //   
+  //   if (user && !loading) {
+  //     // 이름
+  //     if (user.name) {
+  //       setName(user.name);
+  //       setNameState('keyout-typed');
+  //     }
+  //
+  //     // 생년월일 (ISO 8601 형식에서 파싱)
+  //     if (user.birthday) {
+  //       const birthDate = new Date(user.birthday);
+  //       if (!isNaN(birthDate.getTime())) {
+  //         const year = birthDate.getFullYear().toString();
+  //         const month = String(birthDate.getMonth() + 1).padStart(2, '0');
+  //         const day = String(birthDate.getDate()).padStart(2, '0');
+  //         
+  //         setBirthYear(year);
+  //         setBirthYearState('keyout-typed');
+  //         setBirthMonth(month);
+  //         setBirthMonthState('keyout-typed');
+  //         setBirthDay(day);
+  //         setBirthDayState('keyout-typed');
+  //       }
+  //     }
+  //
+  //     // 성별 (boolean: true = 여성, false = 남성)
+  //     setGender(user.sex ? 'female' : 'male');
+  //
+  //     // 이메일 (user_id 사용)
+  //     if (user.user_id) {
+  //       setEmail(user.user_id);
+  //       setEmailState('keyout-typed');
+  //     }
+  //   }
+  // }, [user, loading]);
 
   // 이름 핸들러
   const handleNameFocus = () => {
@@ -170,10 +174,9 @@ export function ProfileEdit(): ReactElement {
       // 년/월/일 중 하나라도 입력되어 있으면 변환 시도
       let birthdayISO = '';
       if (birthYear || birthMonth || birthDay) {
-        // 기존 값에서 가져오거나 새 값 사용
-        const year = birthYear ? parseInt(birthYear, 10) : (user?.birthday ? new Date(user.birthday).getFullYear() : new Date().getFullYear());
-        const month = birthMonth ? parseInt(birthMonth, 10) - 1 : (user?.birthday ? new Date(user.birthday).getMonth() : 0); // JavaScript Date는 0부터 시작
-        const day = birthDay ? parseInt(birthDay, 10) : (user?.birthday ? new Date(user.birthday).getDate() : 1);
+        const year = birthYear ? parseInt(birthYear, 10) : new Date().getFullYear();
+        const month = birthMonth ? parseInt(birthMonth, 10) - 1 : 0; // JavaScript Date는 0부터 시작
+        const day = birthDay ? parseInt(birthDay, 10) : 1;
         
         // UTC 기준으로 날짜 생성 (시간대 변환 문제 방지)
         const birthDate = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
@@ -201,43 +204,23 @@ export function ProfileEdit(): ReactElement {
         updateData.name = name;
       }
 
-      // 생년월일 (변환된 값이 있으면 전송, 없으면 기존 값 유지)
+      // 생년월일 (변환된 값이 있으면 전송)
       if (birthdayISO) {
         updateData.birthday = birthdayISO;
-      } else if (user?.birthday) {
-        // 생년월일을 입력하지 않았으면 기존 값 유지
-        updateData.birthday = user.birthday;
       }
 
       // 성별 (항상 전송)
       updateData.sex = sex;
 
-      // 기존 사용자 정보가 있으면 phone, address, detail_address 유지
-      if (user) {
-        updateData.phone = user.phone;
-        updateData.address = user.address;
-        updateData.detail_address = user.detail_address;
-      }
-
       // 디버깅: 전송할 데이터 확인
       console.log('프로필 업데이트 데이터:', updateData);
 
-      // API 호출
-      const response = await userAPI.updateProfile(updateData);
+      // TODO: API 호출
+      // const response = await userAPI.updateProfile(updateData);
       
-      // 디버깅: 응답 확인
-      console.log('프로필 업데이트 응답:', response.status, response.data);
-      
-      if (response.status === 200 || response.status === 204) {
-        // 성공 시 사용자 정보 업데이트
-        const updatedUser = response.data;
-        updateUser(updatedUser);
-        showToast('프로필이 저장되었습니다.');
-        navigate('/my');
-      } else {
-        const errorData = response.data;
-        showToast(errorData?.detail || '프로필 저장에 실패했습니다.');
-      }
+      // 임시: 저장 성공 처리
+      showToast('프로필이 저장되었습니다.');
+      popFullSheet();
     } catch (error) {
       console.error('프로필 저장 실패:', error);
       showToast('프로필 저장 중 오류가 발생했습니다.');
@@ -249,7 +232,7 @@ export function ProfileEdit(): ReactElement {
       {/* 헤더 */}
       <div className="box-border content-stretch flex h-[68px] items-center justify-between p-[20px] relative shrink-0 w-full">
         <button
-          onClick={() => navigate('/my')}
+          onClick={() => popFullSheet()}
           className="content-stretch flex gap-[10px] items-center relative shrink-0"
         >
           <div className="relative shrink-0 size-[24px]">

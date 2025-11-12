@@ -1,10 +1,10 @@
 import { type ReactElement, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import IconArrowLeft from '../assets/icon_svg/ProfileEdit/IconArrowLeft.svg';
-import Icon16LineChevronDown from '../assets/icon_svg/CustomerCenter/Icon16LineChevronDown.svg';
-import IconCursor from '../assets/icon_svg/CustomerCenter/IconCursor.svg';
-import { InputNormal } from '../components/input/InputNormal';
-import type { InputState } from '../types/input';
+import IconArrowLeft from '../../assets/icon_svg/ProfileEdit/IconArrowLeft.svg';
+import Icon16LineChevronDown from '../../assets/icon_svg/CustomerCenter/Icon16LineChevronDown.svg';
+import IconCursor from '../../assets/icon_svg/CustomerCenter/IconCursor.svg';
+import { InputNormal } from '../input/InputNormal';
+import type { InputState } from '../../types/input';
 
 /**
  * 고객센터 페이지

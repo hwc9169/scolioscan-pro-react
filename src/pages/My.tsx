@@ -1,6 +1,11 @@
 import { type ReactElement, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useFullSheet } from '../hooks/useFullSheet';
 import { BannerSlider } from '../components/BannerSlider';
+import { ProfileEdit as ProfileEditFullSheet } from '../components/FullSheet/ProfileEditFullSheet';
+import { Subscription as SubscriptionFullSheet } from '../components/FullSheet/SubscriptionFullSheet';
+import { Settings as SettingsFullSheet } from '../components/FullSheet/SettingsFullSheet';
+import { CustomerCenter as CustomerCenterFullSheet } from '../components/FullSheet/CustomerCenterFullSheet';
 // My 전용 이미지 - 배너 및 앱 아이콘
 import BannerImage1 from '../assets/icon_svg/My/BannerImage1.png';
 import BannerImage2 from '../assets/icon_svg/My/BannerImage2.png';
@@ -37,6 +42,7 @@ const img4 = MessageQuestion;
  */
 export function My(): ReactElement {
   const navigate = useNavigate();
+  const { pushFullSheet } = useFullSheet();
   // const { logout } = useAuth();
   const [bannerImage, setBannerImage] = useState(BannerImage1);
 
@@ -129,7 +135,7 @@ export function My(): ReactElement {
         {/* 메뉴 리스트 */}
         <div className="bg-white box-border content-stretch flex flex-col items-center px-0 py-[20px] relative shrink-0 w-full">
           <button
-            onClick={() => navigate('/profile-edit')}
+            onClick={() => pushFullSheet(ProfileEditFullSheet, undefined, { animationDirection: 'right' })}
             className="bg-white box-border content-stretch flex h-[52px] items-center justify-between px-[24px] py-0 relative shrink-0 w-full"
           >
             <div className="content-stretch flex gap-[14px] items-center relative shrink-0">
@@ -153,7 +159,7 @@ export function My(): ReactElement {
             </div>
           </button>
           <button
-            onClick={() => navigate('/subscription')}
+            onClick={() => pushFullSheet(SubscriptionFullSheet, undefined, { animationDirection: 'right' })}
             className="bg-white box-border content-stretch flex h-[52px] items-center justify-between px-[24px] py-0 relative shrink-0 w-full"
           >
             <div className="content-stretch flex gap-[14px] items-center relative shrink-0">
@@ -177,7 +183,7 @@ export function My(): ReactElement {
             </div>
           </button>
           <button
-            onClick={() => navigate('/settings')}
+            onClick={() => pushFullSheet(SettingsFullSheet, undefined, { animationDirection: 'right' })}
             className="bg-white box-border content-stretch flex h-[52px] items-center justify-between px-[24px] py-0 relative shrink-0 w-full"
           >
             <div className="content-stretch flex gap-[14px] items-center relative shrink-0">
@@ -201,7 +207,7 @@ export function My(): ReactElement {
             </div>
           </button>
           <button
-            onClick={() => navigate('/customer-center')}
+            onClick={() => pushFullSheet(CustomerCenterFullSheet, undefined, { animationDirection: 'right' })}
             className="bg-white box-border content-stretch flex h-[52px] items-center justify-between px-[24px] py-0 relative shrink-0 w-full"
           >
             <div className="content-stretch flex gap-[14px] items-center relative shrink-0">
