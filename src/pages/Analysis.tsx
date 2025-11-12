@@ -3,6 +3,8 @@ import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, CartesianGrid } fro
 import { useAppData } from '../contexts/AppDataContext';
 import { useFullSheet } from '../hooks/useFullSheet';
 import { AlarmList } from '../components/FullSheet/AlarmListFullSheet';
+import { MeasurementList } from '../components/FullSheet/MeasurementListFullSheet';
+import { MeasurementDetail } from '../components/FullSheet/MeasurementDetailFullSheet';
 import { getAnalyses, type Analysis } from '../api/analysis';
 import BellIcon from '../assets/icon_svg/BellIcon.svg';
 import Badge from '../assets/icon_svg/Badge.svg';
@@ -104,15 +106,22 @@ function MeasurementCard({
   date, 
   type,
   thoracic,
-  lumber
+  lumber,
+  measurement,
+  onClick
 }: { 
   date: string; 
   type: string;
   thoracic: string;
   lumber: string;
+  measurement: Analysis;
+  onClick: () => void;
 }) {
   return (
-    <div className="bg-white box-border content-stretch flex items-center justify-between overflow-clip px-[20px] py-[16px] relative rounded-[12px] shadow-[0px_0px_16px_0px_rgba(0,0,0,0.04)] shrink-0 w-full">
+    <button
+      onClick={onClick}
+      className="bg-white box-border content-stretch flex items-center justify-between overflow-clip px-[20px] py-[16px] relative rounded-[12px] shadow-[0px_0px_16px_0px_rgba(0,0,0,0.04)] shrink-0 w-full cursor-pointer text-left"
+    >
       <div className="content-stretch flex flex-col gap-[4px] items-start relative shrink-0">
         <div className="flex flex-col font-['Pretendard_Variable:Medium',sans-serif] font-medium justify-center leading-[0] not-italic relative shrink-0 text-[#25272d] text-[15px] text-nowrap">
           <p className="leading-[20px] whitespace-pre">{date}</p>
@@ -141,7 +150,7 @@ function MeasurementCard({
           </div>
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -156,6 +165,14 @@ export function Analysis(): ReactElement {
 
   const handleAlarmClick = () => {
     openFullSheet(AlarmList, {}, { animationDirection: 'right' });
+  };
+
+  const handleViewAllMeasurements = () => {
+    openFullSheet(MeasurementList, {}, { animationDirection: 'right' });
+  };
+
+  const handleMeasurementClick = (measurement: Analysis) => {
+    openFullSheet(MeasurementDetail, { measurement }, { animationDirection: 'right' });
   };
 
   // 분석 데이터 로드
@@ -460,7 +477,10 @@ export function Analysis(): ReactElement {
             <div className="flex flex-col font-['Pretendard_Variable:SemiBold',sans-serif] font-semibold justify-center leading-[0] not-italic relative shrink-0 text-[#2b2f36] text-[16px] text-nowrap">
               <p className="leading-[22px] whitespace-pre">측정 목록</p>
             </div>
-            <div className="content-stretch flex items-center relative shrink-0">
+            <button
+              onClick={handleViewAllMeasurements}
+              className="content-stretch flex items-center relative shrink-0 cursor-pointer"
+            >
               <div className="flex flex-col font-['Pretendard_Variable:Medium',sans-serif] font-medium justify-center leading-[0] not-italic relative shrink-0 text-[#2e96ff] text-[15px] text-nowrap">
                 <p className="leading-[20px] whitespace-pre">모두 보기</p>
               </div>
@@ -475,7 +495,7 @@ export function Analysis(): ReactElement {
                   </div>
                 </div>
               </div>
-            </div>
+            </button>
           </div>
           <div className="content-stretch flex flex-col gap-[10px] items-start relative shrink-0 w-full">
             {isLoading ? (
@@ -488,6 +508,8 @@ export function Analysis(): ReactElement {
                   type={getAnalysisTypeString(analysis.analysis_type)}
                   thoracic={String(analysis.main_thoracic)}
                   lumber={String(analysis.lumbar)}
+                  measurement={analysis}
+                  onClick={() => handleMeasurementClick(analysis)}
                 />
               ))
             ) : null}
