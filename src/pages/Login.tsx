@@ -8,14 +8,16 @@ import { SignupEmailFullSheet } from '../components/FullSheet/SignupEmailFullShe
 import { PasswordResetFullSheet } from '../components/FullSheet/PasswordResetFullSheet';
 import { SIGNUP_DATA_KEY, type SignupData } from '../types/signup';
 import { IconNextVineLogo } from '../assets/Icon';
-import { useAuth } from '../contexts/AuthContext';
+// import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { login } from '../api/auth';
+import { setCookie } from '../utils/common';
 
 export function Login(): ReactElement {
   const navigate = useNavigate();
   const { pushFullSheet } = useFullSheet();
   const cache = useCacheStorage();
-  const { login } = useAuth();
+  // const { login } = useAuth();
   const { showToast } = useToast();
   const [email, setEmail] = useState('test02@gmail.com');
   const [password, setPassword] = useState('test!@34');
@@ -92,12 +94,24 @@ export function Login(): ReactElement {
     setPasswordError(undefined);
 
     try {
-      await login({
+      // 로그인 API 호출
+      const loginResponse = await login({
         user_id: email,
         user_pw: password,
       });
-      // 로그인 성공 시 AuthContext가 자동으로 사용자 정보를 로드하고 홈으로 리다이렉트됨
-      navigate('/home');
+      
+      // 로그인 성공 시 액세스 토큰을 쿠키에 저장
+      if (loginResponse.access_token) {
+        setCookie('userAccessToken', loginResponse.access_token);
+      }
+      
+      // Refresh Token이 있다면 localStorage에 저장 (필요한 경우)
+      // if (loginResponse.refresh_token) {
+      //   localStorage.setItem('userRefreshToken', loginResponse.refresh_token);
+      // }
+      
+      // 스플래시 페이지로 이동 (스플래시에서 사용자 정보 조회 후 홈으로 이동)
+      navigate('/', { replace: true });
     } catch (error: unknown) {
       console.error('로그인 실패:', error);
       const errorMessage = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || '로그인에 실패했습니다.';

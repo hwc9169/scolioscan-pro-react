@@ -1,6 +1,7 @@
 import { type ReactElement, useState, useEffect, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useFullSheet } from '../../hooks/useFullSheet';
+import { useToast } from '../../contexts/ToastContext';
 import { InputNormal } from '../input/InputNormal';
 import { DefaultBtn } from '../button/DefaultBtn';
 import type { InputState } from '../../types/input';
@@ -13,7 +14,8 @@ import { passwordReset } from '../../api/auth';
  * 비밀번호 찾기 풀 시트 컴포넌트
  */
 export function PasswordResetFullSheet(): ReactElement {
-  const { popFullSheet } = useFullSheet();
+  const { popFullSheet, closeFullSheet } = useFullSheet();
+  const { showToast } = useToast();
   const emailInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const emailValueRef = useRef('');
@@ -147,15 +149,33 @@ export function PasswordResetFullSheet(): ReactElement {
         user_id: trimmedEmail.trim(),
         name: trimmedName.trim(),
       });
+      console.log(response);
+    
       
-      if (response.ok) {
-        // 성공 시 처리 (예: 성공 메시지 표시 후 닫기)
-        console.log('비밀번호 재설정 메일이 발송되었습니다.');
-        popFullSheet();
+      // passwordReset은 Response 객체를 반환
+      if (response instanceof Response) {
+        if (response.ok) {
+          // 성공 시 모든 풀 시트 클리어 및 토스트 표시
+          closeFullSheet();
+          showToast('비밀번호 재설정 메일이 발송되었습니다');
+        } else {
+          // 에러 처리
+          if (response.status === 404) {
+            // 404 응답: 이메일 혹은 이름을 잘못 입력
+            showToast('이메일 혹은 이름을 잘못 입력하였습니다');
+          } else {
+            // 기타 에러 처리
+            try {
+              const errorData = await response.json();
+              console.error('비밀번호 재설정 실패:', errorData);
+            } catch (e) {
+              console.error('비밀번호 재설정 실패:', response.status, response.statusText);
+            }
+          }
+        }
       } else {
-        // 에러 처리
-        const errorData = await response.json();
-        console.error('비밀번호 재설정 실패:', errorData);
+        // 예상치 못한 응답 형식
+        console.error('비밀번호 재설정 응답 형식 오류:', response);
       }
     } catch (error) {
       console.error('비밀번호 재설정 요청 실패:', error);
@@ -273,7 +293,7 @@ export function PasswordResetFullSheet(): ReactElement {
             disabled={isButtonDisabled}
             className="w-full"
           >
-            계속하기
+            비밀번호 찾기
           </DefaultBtn>
         </div>
       </div>

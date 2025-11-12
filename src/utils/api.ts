@@ -58,34 +58,34 @@ export const userAPI = {
   updateSettings: (settings: unknown) => api.put('/users/me/settings', settings),
 };
 
-// Alarm API
-export const alarmAPI = {
-  getAlarms: () => api.get('/alarms/'),
-  getUnreadCount: () => api.get('/alarms/unread-count'),
-  markAsRead: (alarmId: string) => api.post(`/alarms/${alarmId}/read`),
-  markAllAsRead: () => api.post('/alarms/read-all'),
-};
+// // Alarm API
+// export const alarmAPI = {
+//   getAlarms: () => api.get('/alarms/'),
+//   getUnreadCount: () => api.get('/alarms/unread-count'),
+//   markAsRead: (alarmId: string) => api.post(`/alarms/${alarmId}/read`),
+//   markAllAsRead: () => api.post('/alarms/read-all'),
+// };
 
-// Analysis API
-export const analysisAPI = {
-  getAnalyses: (limit?: number) => api.get('/analysis/', { params: { limit } }),
-  getAnalysis: (id: string) => api.get(`/analysis/${id}`),
-  createAnalysis: (data: unknown) => api.post('/analysis/', data),
-  getTypes: () => api.get('/analysis/types/'),
-};
+// // Analysis API
+// export const analysisAPI = {
+//   getAnalyses: (limit?: number) => api.get('/analysis/', { params: { limit } }),
+//   getAnalysis: (id: string) => api.get(`/analysis/${id}`),
+//   createAnalysis: (data: unknown) => api.post('/analysis/', data),
+//   getTypes: () => api.get('/analysis/types/'),
+// };
 
-// Subscribe API
-export const subscribeAPI = {
-  getTypes: () => api.get('/subscribe/types'),
-  getCurrent: () => api.get('/subscribe/current'),
-  create: (data: unknown) => api.post('/subscribe/', data),
-  cancel: () => api.post('/subscribe/cancel'),
-};
+// // Subscribe API
+// export const subscribeAPI = {
+//   getTypes: () => api.get('/subscribe/types'),
+//   getCurrent: () => api.get('/subscribe/current'),
+//   create: (data: unknown) => api.post('/subscribe/', data),
+//   cancel: () => api.post('/subscribe/cancel'),
+// };
 
-// Contact API
-export const contactAPI = {
-  send: (data: unknown) => api.post('/contact/', data),
-};
+// // Contact API
+// export const contactAPI = {
+//   send: (data: unknown) => api.post('/contact/', data),
+// };
 
 export default api;
 
