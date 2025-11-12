@@ -1,11 +1,10 @@
-import { type ReactElement, useState } from 'react';
-// import { useEffect } from 'react'; // 사용자 정보 로드 시 필요
+import { type ReactElement, useState, useEffect } from 'react';
 import { InputNormal } from '../input/InputNormal';
 import IconArrowLeft from '../../assets/icon_svg/ProfileEdit/IconArrowLeft.svg';
 import type { InputState } from '../../types/input';
 import { useToast } from '../../contexts/ToastContext';
 import { useFullSheet } from '../../hooks/useFullSheet';
-// import { useAuth } from '../../contexts/AuthContext'; // 사용자 정보 로드 시 필요 (또는 다른 방식으로 대체)
+import { useAppData } from '../../contexts/AppDataContext';
 
 /**
  * 프로필 수정 페이지
@@ -13,6 +12,8 @@ import { useFullSheet } from '../../hooks/useFullSheet';
 export function ProfileEdit(): ReactElement {
   const { showToast } = useToast();
   const { popFullSheet } = useFullSheet();
+  const { appData } = useAppData();
+  const { user, isLoading } = appData;
   
   // 폼 상태
   const [name, setName] = useState('');
@@ -32,47 +33,42 @@ export function ProfileEdit(): ReactElement {
   const [email, setEmail] = useState('');
   const [emailState, setEmailState] = useState<InputState>('keyout-empty');
 
-  // TODO: 사용자 정보 로드 - 나중에 다른 방식으로 대체 예정
   // 사용자 정보가 로드되면 폼에 채우기
-  // useEffect(() => {
-  //   // 사용자 정보를 가져오는 로직 (예: useAuth, API 직접 호출, props 등)
-  //   // const user = ...; // 사용자 정보 가져오기
-  //   // const loading = ...; // 로딩 상태
-  //   
-  //   if (user && !loading) {
-  //     // 이름
-  //     if (user.name) {
-  //       setName(user.name);
-  //       setNameState('keyout-typed');
-  //     }
-  //
-  //     // 생년월일 (ISO 8601 형식에서 파싱)
-  //     if (user.birthday) {
-  //       const birthDate = new Date(user.birthday);
-  //       if (!isNaN(birthDate.getTime())) {
-  //         const year = birthDate.getFullYear().toString();
-  //         const month = String(birthDate.getMonth() + 1).padStart(2, '0');
-  //         const day = String(birthDate.getDate()).padStart(2, '0');
-  //         
-  //         setBirthYear(year);
-  //         setBirthYearState('keyout-typed');
-  //         setBirthMonth(month);
-  //         setBirthMonthState('keyout-typed');
-  //         setBirthDay(day);
-  //         setBirthDayState('keyout-typed');
-  //       }
-  //     }
-  //
-  //     // 성별 (boolean: true = 여성, false = 남성)
-  //     setGender(user.sex ? 'female' : 'male');
-  //
-  //     // 이메일 (user_id 사용)
-  //     if (user.user_id) {
-  //       setEmail(user.user_id);
-  //       setEmailState('keyout-typed');
-  //     }
-  //   }
-  // }, [user, loading]);
+  useEffect(() => {
+    if (user && !isLoading) {
+      // 이름
+      if (user.name) {
+        setName(user.name);
+        setNameState('keyout-typed');
+      }
+
+      // 생년월일 (ISO 8601 형식에서 파싱)
+      if (user.birthday) {
+        const birthDate = new Date(user.birthday);
+        if (!isNaN(birthDate.getTime())) {
+          const year = birthDate.getFullYear().toString();
+          const month = String(birthDate.getMonth() + 1).padStart(2, '0');
+          const day = String(birthDate.getDate()).padStart(2, '0');
+          
+          setBirthYear(year);
+          setBirthYearState('keyout-typed');
+          setBirthMonth(month);
+          setBirthMonthState('keyout-typed');
+          setBirthDay(day);
+          setBirthDayState('keyout-typed');
+        }
+      }
+
+      // 성별 (boolean: true = 여성, false = 남성)
+      setGender(user.sex ? 'female' : 'male');
+
+      // 이메일 (user_id 사용)
+      if (user.user_id) {
+        setEmail(user.user_id);
+        setEmailState('keyout-typed');
+      }
+    }
+  }, [user, isLoading]);
 
   // 이름 핸들러
   const handleNameFocus = () => {
