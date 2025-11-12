@@ -2,6 +2,7 @@ import { type ReactElement, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getLoginUserInfo } from '../utils/loginSession';
 import { getCookie } from '../utils/common';
+import { useAppData } from '../contexts/AppDataContext';
 
 /**
  * 스플래시 페이지
@@ -12,6 +13,7 @@ import { getCookie } from '../utils/common';
  */
 export function Splash(): ReactElement {
   const navigate = useNavigate();
+  const { refreshAllData } = useAppData();
 
   useEffect(() => {
     const checkAuthAndNavigate = async () => {
@@ -29,8 +31,8 @@ export function Splash(): ReactElement {
         const isAuthenticated = await getLoginUserInfo();
         
         if (isAuthenticated) {
-          // TODO: 필요한 초기 데이터 조회 로직 추가
-          // 예: await fetchInitialData();
+          // 전역 데이터 로드 (사용자 정보, 알람 개수 등)
+          await refreshAllData();
           
           // 홈 페이지로 이동
           navigate('/home', { replace: true });
@@ -45,7 +47,7 @@ export function Splash(): ReactElement {
     };
 
     checkAuthAndNavigate();
-  }, [navigate]);
+  }, [navigate, refreshAllData]);
 
   // 스플래시 화면 (로딩 중 표시)
   return (

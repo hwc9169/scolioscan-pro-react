@@ -1,5 +1,6 @@
 import { type ReactElement, useState, useEffect } from 'react';
 import { BannerSlider } from '../components/BannerSlider';
+import { useAppData } from '../contexts/AppDataContext';
 // 공통 아이콘
 import BellIcon from '../assets/icon_svg/BellIcon.svg';
 import Badge from '../assets/icon_svg/Badge.svg';
@@ -135,6 +136,7 @@ function CardHomemenu({
  * 홈 페이지
  */
 export function Home(): ReactElement {
+  const { appData } = useAppData();
   const [bannerImage, setBannerImage] = useState(BannerImage1);
 
   useEffect(() => {
@@ -162,7 +164,7 @@ export function Home(): ReactElement {
       {/* 헤더 */}
       <div className="fixed top-0 left-0 right-0 bg-gray-50 box-border content-stretch flex items-center justify-between p-[20px] shrink-0 w-full z-40">
         <div className="h-[24px] relative shrink-0 w-[120px]">
-          <div className="absolute flex flex-col font-bold justify-center leading-[0] left-[calc(50%-57.5px)] text-[#22bcb7] text-[27px] text-nowrap top-[12.5px] tracking-[-0.27px] translate-y-[-50%]">
+          <div className="absolute flex flex-col font-['MuseoModerno:Bold',sans-serif] font-bold justify-center leading-[0] relative size-full text-[#22bcb7] text-[27.152px] text-nowrap tracking-[-0.2715px]">
             <p className="leading-[normal] whitespace-pre">nextvine</p>
           </div>
         </div>
@@ -175,11 +177,21 @@ export function Home(): ReactElement {
                 </div>
               </div>
             </div>
-            <div className="absolute left-[23px] size-[4.5px] top-px">
-              <div className="absolute inset-0">
-                <img alt="" className="block max-w-none size-full" src={img1} />
-              </div>
-            </div>
+            {/* 알람 뱃지 */}
+            {appData.unreadAlarmCount > 0 && (
+              <>
+                <div className="absolute left-[23px] top-0 bg-red-500 rounded-full min-w-[16px] h-[16px] flex items-center justify-center">
+                  <span className="text-white text-[10px] font-bold leading-none">
+                    {appData.unreadAlarmCount > 9 ? '9+' : appData.unreadAlarmCount}
+                  </span>
+                </div>
+                <div className="absolute left-[23px] size-[4.5px] top-px">
+                  <div className="absolute inset-0">
+                    <img alt="" className="block max-w-none size-full" src={img1} />
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import { SERVER_URL } from '../utils/server';
-import { getCookie } from '../utils/common';
+import { fetchDataAsync, getCookie } from '../utils/common';
 
 /**
  * 알림 정보 타입
@@ -58,19 +58,34 @@ export async function getAlarms(): Promise<Response> {
  * 읽지 않은 알림 개수 조회 API
  * GET /api/alarms/unread-count
  * 
- * @returns 읽지 않은 알림 개수 (string)
+ * @returns 읽지 않은 알림 개수 (Response 또는 파싱된 데이터)
  */
 export async function getUnreadAlarmCount(): Promise<Response> {
-  const accessToken = getCookie('userAccessToken');
-  const response = await fetch(`${SERVER_URL}/api/alarms/unread-count`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${accessToken || ''}`,
-    },
-    credentials: 'include',
-  });
-  return response;
+  // fetchDataAsync 직접 사용
+  const url = `${SERVER_URL}/api/alarms/unread-count`;
+  
+  try {
+    const result = await fetchDataAsync(url, 'GET', {}, false, true);
+    
+    // fetchDataAsync는 성공 시 파싱된 데이터를 반환하지만, Response 객체가 필요하므로
+    // result가 Response 객체인지 확인 (에러 시 Response 반환)
+    if (result instanceof Response) {
+      return result;
+    }
+    
+    // 성공 시: fetchDataAsync가 파싱된 데이터를 반환했으므로
+    // Response 객체를 생성하여 반환
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      statusText: 'OK',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
 }
 
 /**

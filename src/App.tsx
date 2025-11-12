@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { FullSheetProvider } from './contexts/FullSheetContext';
 import { CacheStorageProvider } from './contexts/CacheStorageContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { AppDataProvider } from './contexts/AppDataContext';
 import { FullSheetRenderer } from './components/FullSheet/FullSheetRenderer';
 import { ToastRenderer } from './components/Toast/ToastRenderer';
 import { Splash } from './pages/Splash';
@@ -23,7 +24,8 @@ function App(): ReactElement {
       <FullSheetProvider>
         <CacheStorageProvider>
           <ToastProvider>
-            <Routes>
+            <AppDataProvider>
+              <Routes>
             {/* 스플래시 페이지 - 로그인 상태 확인 및 데이터 조회 */}
             <Route path="/" element={<Splash />} />
             
@@ -52,8 +54,9 @@ function App(): ReactElement {
             {/* 존재하지 않는 경로는 홈으로 리다이렉트 */}
             <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-            <FullSheetRenderer />
-            <ToastRenderer />
+              <FullSheetRenderer />
+              <ToastRenderer />
+            </AppDataProvider>
           </ToastProvider>
         </CacheStorageProvider>
       </FullSheetProvider>

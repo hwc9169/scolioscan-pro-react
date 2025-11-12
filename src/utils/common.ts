@@ -76,10 +76,15 @@ export async function fetchDataAsync(url: string, method: string, data: any, for
   }
 
   if (method === 'GET' || method === 'DELETE') {
-    newUrl += '?';
+    const queryParams: string[] = [];
     for (const key in data) {
       const value = data[key];
-      newUrl += `${key}=${value}&`;
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.push(`${key}=${value}`);
+      }
+    }
+    if (queryParams.length > 0) {
+      newUrl += '?' + queryParams.join('&');
     }
   }
 
