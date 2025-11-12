@@ -96,7 +96,9 @@ export interface LoginResponse {
  */
 export async function login(loginData: LoginRequest): Promise<LoginResponse> {
   // fetchDataAsync 직접 사용 (인증이 필요 없는 API이므로 credentials 사용 안 함)
-  const url = `${SERVER_URL}/api/auth/login`;
+  // SERVER_URL이 이미 /api를 포함하는지 확인
+  const baseUrl = SERVER_URL.endsWith('/api') ? SERVER_URL : `${SERVER_URL}/api`;
+  const url = `${baseUrl}/auth/login`;
   
   try {
     const result = await fetchDataAsync(url, 'POST', loginData, false, false);
