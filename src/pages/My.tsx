@@ -23,7 +23,9 @@ import Setting from '../assets/icon_svg/My/Setting.svg';
 import MessageQuestion from '../assets/icon_svg/My/MessageQuestion.svg';
 
 import { NavigationBottom } from '../components/NavigationBottom';
-// import { useAuth } from '../contexts/AuthContext';
+import { useAppData } from '../contexts/AppDataContext';
+import { logout as logoutAPI } from '../api/auth';
+import { setCookie } from '../utils/common';
 
 // 로컬 아이콘 에셋 매핑
 const img5 = AppIcon1;
@@ -44,11 +46,43 @@ export function My(): ReactElement {
   const navigate = useNavigate();
   const { pushFullSheet } = useFullSheet();
   // const { logout } = useAuth();
+  const { appData, clearAppData } = useAppData();
   const [bannerImage, setBannerImage] = useState(BannerImage1);
+  
+  // 전역에서 관리되는 사용자 정보 사용
+  const user = appData.user;
 
-  const handleLogout = () => {
-    // logout();
-    navigate('/login', { replace: true });
+  /**
+   * 로그아웃 처리
+   * 1. 서버에 로그아웃 요청 (실패해도 클라이언트 로그아웃은 진행)
+   * 2. 쿠키 제거 (Access Token)
+   * 3. Refresh Token 제거 (localStorage)
+   * 4. 전역 데이터 초기화
+   * 5. 스플래시 페이지로 이동
+   */
+  const handleLogout = async () => {
+    try {
+      // 서버에 로그아웃 요청 (선택사항 - 실패해도 클라이언트 로그아웃은 진행)
+      try {
+        await logoutAPI();
+      } catch (error) {
+        console.warn('로그아웃 API 호출 실패 (클라이언트 로그아웃은 진행):', error);
+      }
+    } catch (error) {
+      console.warn('로그아웃 API 호출 중 오류:', error);
+    }
+    
+    // 쿠키 제거 (Access Token)
+    setCookie('userAccessToken', '', 0);
+    
+    // Refresh Token 제거 (localStorage에 저장되어 있다면)
+    localStorage.removeItem('userRefreshToken');
+    
+    // 전역 데이터 초기화
+    clearAppData();
+    
+    // 스플래시 페이지로 이동 (스플래시에서 토큰 없음을 확인하고 로그인 페이지로 리다이렉트)
+    navigate('/', { replace: true });
   };
 
   useEffect(() => {
@@ -85,15 +119,15 @@ export function My(): ReactElement {
                 </div>
               </div>
             </div>
-            <div className="content-stretch flex flex-col items-start justify-center leading-[0] not-italic relative shrink-0 text-nowrap">
-              <div className="flex flex-col font-['Pretendard_Variable:SemiBold',sans-serif] justify-center relative shrink-0 text-[18px] text-black">
+            <div className="content-stretch flex flex-col items-start justify-center leading-[0] relative size-full text-nowrap">
+              <div className="flex flex-col font-['Pretendard_Variable:SemiBold',sans-serif] font-semibold justify-center relative shrink-0 text-[18px] text-black">
                 <p className="leading-[24px] text-nowrap whitespace-pre">
-                  {/* {loading ? '로딩 중...' : user?.name || '사용자'} */}
+                  {appData.isLoading ? '로딩 중...' : user?.name || '사용자'}
                 </p>
               </div>
-              <div className="flex flex-col font-['Pretendard_Variable:Regular',sans-serif] justify-center relative shrink-0 text-[#7e89a0] text-[14px]">
+              <div className="flex flex-col font-['Pretendard_Variable:Regular',sans-serif] font-normal justify-center relative shrink-0 text-[#7e89a0] text-[14px]">
                 <p className="leading-[20px] text-nowrap whitespace-pre">
-                  {/* {loading ? '로딩 중...' : user?.user_id || ''} */}
+                  {appData.isLoading ? '로딩 중...' : user?.user_id || ''}
                 </p>
               </div>
             </div>

@@ -130,3 +130,27 @@ export async function passwordReset(resetData: PasswordResetRequest): Promise<Re
   }
 }
 
+/**
+ * 로그아웃 API
+ * POST /api/auth/logout
+ * 
+ * @returns Response
+ */
+export async function logout(): Promise<Response> {
+  // fetchDataAsync 사용 (인증이 필요한 API이므로 credentials 사용)
+  const baseUrl = SERVER_URL.endsWith('/api') ? SERVER_URL : `${SERVER_URL}/api`;
+  const url = `${baseUrl}/auth/logout`;
+  
+  try {
+    const result = await fetchDataAsync(url, 'POST', {}, false, true);
+    return result instanceof Response ? result : new Response(JSON.stringify(result), {
+      status: 200,
+      statusText: 'OK',
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('로그아웃 API 호출 실패:', error);
+    throw error;
+  }
+}
+
