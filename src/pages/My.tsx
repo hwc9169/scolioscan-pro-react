@@ -1,4 +1,5 @@
 import { type ReactElement, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BannerSlider } from '../components/BannerSlider';
 // My 전용 이미지 - 배너 및 앱 아이콘
 import BannerImage1 from '../assets/icon_svg/My/BannerImage1.png';
@@ -34,6 +35,7 @@ const img4 = MessageQuestion;
  * 마이 페이지
  */
 export function My(): ReactElement {
+  const navigate = useNavigate();
   const [bannerImage, setBannerImage] = useState(BannerImage1);
 
   useEffect(() => {
@@ -115,7 +117,10 @@ export function My(): ReactElement {
 
         {/* 메뉴 리스트 */}
         <div className="bg-white box-border content-stretch flex flex-col items-center px-0 py-[20px] relative shrink-0 w-full">
-          <div className="bg-white box-border content-stretch flex h-[52px] items-center justify-between px-[24px] py-0 relative shrink-0 w-full">
+          <button
+            onClick={() => navigate('/profile-edit')}
+            className="bg-white box-border content-stretch flex h-[52px] items-center justify-between px-[24px] py-0 relative shrink-0 w-full"
+          >
             <div className="content-stretch flex gap-[14px] items-center relative shrink-0">
               <div className="bg-[#f3f4f7] box-border content-stretch flex gap-[10px] items-center justify-center p-[4px] relative rounded-[8px] shrink-0 size-[32px]">
                 <div className="relative shrink-0 size-[16.2px]">
@@ -135,8 +140,11 @@ export function My(): ReactElement {
                 </div>
               </div>
             </div>
-          </div>
-          <div className="bg-white box-border content-stretch flex h-[52px] items-center justify-between px-[24px] py-0 relative shrink-0 w-full">
+          </button>
+          <button
+            onClick={() => navigate('/subscription')}
+            className="bg-white box-border content-stretch flex h-[52px] items-center justify-between px-[24px] py-0 relative shrink-0 w-full"
+          >
             <div className="content-stretch flex gap-[14px] items-center relative shrink-0">
               <div className="bg-[#f3f4f7] box-border content-stretch flex gap-[10px] items-center justify-center p-[4px] relative rounded-[8px] shrink-0 size-[32px]">
                 <div className="relative shrink-0 size-[13.5px]">
@@ -156,8 +164,11 @@ export function My(): ReactElement {
                 </div>
               </div>
             </div>
-          </div>
-          <div className="bg-white box-border content-stretch flex h-[52px] items-center justify-between px-[24px] py-0 relative shrink-0 w-full">
+          </button>
+          <button
+            onClick={() => navigate('/settings')}
+            className="bg-white box-border content-stretch flex h-[52px] items-center justify-between px-[24px] py-0 relative shrink-0 w-full"
+          >
             <div className="content-stretch flex gap-[14px] items-center relative shrink-0">
               <div className="bg-[#f3f4f7] box-border content-stretch flex gap-[10px] items-center justify-center p-[4px] relative rounded-[8px] shrink-0 size-[32px]">
                 <div className="relative shrink-0 size-[13.5px]">
@@ -177,8 +188,11 @@ export function My(): ReactElement {
                 </div>
               </div>
             </div>
-          </div>
-          <div className="bg-white box-border content-stretch flex h-[52px] items-center justify-between px-[24px] py-0 relative shrink-0 w-full">
+          </button>
+          <button
+            onClick={() => navigate('/customer-center')}
+            className="bg-white box-border content-stretch flex h-[52px] items-center justify-between px-[24px] py-0 relative shrink-0 w-full"
+          >
             <div className="content-stretch flex gap-[14px] items-center relative shrink-0">
               <div className="bg-[#f3f4f7] box-border content-stretch flex gap-[10px] items-center justify-center p-[4px] relative rounded-[8px] shrink-0 size-[32px]">
                 <div className="relative shrink-0 size-[13.5px]">
@@ -198,7 +212,7 @@ export function My(): ReactElement {
                 </div>
               </div>
             </div>
-          </div>
+          </button>
         </div>
 
         {/* 관련 앱 섹션 */}

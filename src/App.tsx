@@ -12,6 +12,10 @@ import { Analysis } from './pages/Analysis';
 import { Hospital } from './pages/Hospital';
 import { Shopping } from './pages/Shopping';
 import { My } from './pages/My';
+import { ProfileEdit } from './pages/ProfileEdit';
+import { Subscription } from './pages/Subscription';
+import { Settings } from './pages/Settings';
+import { CustomerCenter } from './pages/CustomerCenter';
 
 function App(): ReactElement {
   return (
@@ -32,6 +36,18 @@ function App(): ReactElement {
             <Route path="/hospital" element={<Hospital />} />
             <Route path="/shopping" element={<Shopping />} />
             <Route path="/my" element={<My />} />
+            
+            {/* 프로필 수정 페이지 */}
+            <Route path="/profile-edit" element={<ProfileEdit />} />
+            
+            {/* 구독 설정 페이지 */}
+            <Route path="/subscription" element={<Subscription />} />
+            
+            {/* 환경 설정 페이지 */}
+            <Route path="/settings" element={<Settings />} />
+            
+            {/* 고객센터 페이지 */}
+            <Route path="/customer-center" element={<CustomerCenter />} />
             
             {/* 존재하지 않는 경로는 홈으로 리다이렉트 */}
             <Route path="*" element={<Navigate to="/" replace />} />
